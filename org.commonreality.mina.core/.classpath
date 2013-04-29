@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry exported="true" kind="lib" path="2.0.4/lib/slf4j-nop-1.6.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/lib/commons-lang-2.6.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/lib/commons-logging-1.0.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/lib/jzlib-1.0.7.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/lib/slf4j-api-1.6.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/mina-core-2.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/mina-filter-compression-2.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/mina-statemachine-2.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="2.0.4/mina-transport-apr-2.0.4.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
