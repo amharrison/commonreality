@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Tests Plug-in
+Bundle-SymbolicName: org.commonreality.tests
+Bundle-Version: 1.0.0
+Require-Bundle: org.commonreality,
+ org.junit,
+ org.apache.log4j,
+ org.jactr.support
