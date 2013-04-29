@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension-point id="sensors" name="CommonReality Sensor Implementations" schema="schema/org.commonreality.sensor.exsd"/>
+   <extension
+         point="org.commonreality.sensors">
+      <sensor
+            class="org.commonreality.sensors.keyboard.DefaultKeyboardSensor"
+            clock-owner="false"
+            name="KeyboardSensor">
+         <description>Provides keyboard and (sketchy) mouse support using ACT-R's keyboard map</description>
+         <property
+               name="Actuator"
+               value="org.commonreality.sensors.keyboard.DefaultActuator">
+            <description>DefaultActuator (or subclasses) combines the interpolated events with the actuator that will
+            actually press buttons or move the mouse.
+            </description>
+         </property>
+         <property
+               name="DurationEquation"
+               value="org.commonreality.sensors.keyboard.SerialDurationEquation">
+            <description>org.commonreality.sensors.handlers.ICommandTimingEquation used to compute execution times for complex movements
+            </description>
+         </property>
+      </sensor>
+      <sensor
+            class="org.commonreality.sensors.speech.DefaultSpeechSensor"
+            clock-owner="false"
+            name="SpeechSensor">
+         <description>Cheap'o speech source</description>
+         <property name="Speaker" value="">
+          <description>instance of ISpeaker to do the actual vocalization</description>
+         </property>
+         <property
+               name="DurationEquation"
+               value="">
+            <description>org.commonreality.sensors.handlers.ICommandTimingEquation that computes vocalization durations. No value will use default equation
+            </description>
+         </property>
+         <property
+               name="CharactersPerSecond"
+               value="20">
+            <description>Used by the default duration equation, default 20
+            </description>
+         </property>
+      </sensor>
+      <sensor
+            class="org.commonreality.sensors.aural.DefaultAuralSensor"
+            clock-owner="false"
+            name="AuralSensor">
+         <description>Cheap'o aural source</description>
+         <property
+               name="IAuralMutator."
+               value="">
+            <description>Impl of GeneralAuralProcessor.IAuralMutator that can tweak aural properties of generated IAfferentObjects
+            </description>
+         </property>
+      </sensor>
+   </extension>
+
+   <extension point="org.eclipse.pde.core.javadoc">
+     <javadoc path="javadoc/" archive="true">
+       <plugin id="org.commonreality"/>
+     </javadoc>
+   </extension>
+</plugin>
