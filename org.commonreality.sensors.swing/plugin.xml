@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension
+         point="org.commonreality.sensors">
+      <sensor
+            class="org.commonreality.sensors.swing.DefaultSwingSensor"
+            clock-owner="false"
+            name="SwingSensor">
+         <description>Provides basic support for perceiving Swing-based GUIs. The configural url provides the creators and processors required to segment the display. If none is provided, default.xml will be used. To enable keyboard/mouse manipulation, use the DefaultKeyboardSensor with the org.commonreality.sensors.swing.SwingActuator</description>
+         <property
+               name="ConfigurationURL" value="">
+            <description>
+               description body text
+            </description>
+         </property>
+      </sensor>
+   </extension>
+   <extension
+         point="org.jactr.extensions">
+      <model-extension
+            class="org.commonreality.sensors.swing.jactr.SwingExtension"
+            name="SwingExtension">
+         <description>
+            Automatically injects default visual encoders into the model for use with the DefaultSwingSensor.
+         </description>
+      </model-extension>
+   </extension>
+   <extension
+         point="org.jactr.io.astparticipants">
+      <astparticipant
+            class="org.commonreality.sensors.swing.jactr.io.SwingExtensionASTParticipant"
+            content="org/commonreality/sensors/swing/jactr/io/swing-types.jactr"
+            contributingClass="org.commonreality.sensors.swing.jactr.SwingExtension">
+      </astparticipant>
+   </extension>
+
+</plugin>

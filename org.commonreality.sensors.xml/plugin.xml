@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.commonreality.sensors">
+      <sensor name="XMLSensor" class="org.commonreality.sensors.xml.XMLSensor">
+         <description>General sensor that sends sensor data read from an XML file</description>
+         <property
+               name="XMLSensor.DataURI"
+               value="">
+            <description>URL or classloader resource that contains the xml formatted data to send
+            </description>
+         </property>
+      </sensor>
+   </extension>
+
+</plugin>
