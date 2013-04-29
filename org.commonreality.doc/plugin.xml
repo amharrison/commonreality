@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension
+         point="org.eclipse.pde.core.javadoc">
+      <javadoc
+            archive="false"
+            path="org.commonreality/">
+         <plugin
+               id="org.commonreality">
+         </plugin>
+      </javadoc>
+      <javadoc
+            archive="false"
+            path="org.commonreality.sensors.base/">
+         <plugin
+               id="org.commonreality.sensors.base">
+         </plugin>
+      </javadoc>
+   </extension>
+
+</plugin>
