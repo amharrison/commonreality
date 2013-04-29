@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Base Plug-in
+Bundle-SymbolicName: org.commonreality.sensors.base
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Require-Bundle: org.commonreality,
+ org.commonreality.mina,
+ org.jactr.support,
+ org.apache.log4j,
+ org.commonreality.mina.core
+Eclipse-BuddyPolicy: registered
+Eclipse-RegisterBuddy: org.commonreality, org.jactr.io, org.jactr, org.jactr.tools, org.jactr.support, org.apache.log4j 
+Export-Package: org.commonreality.sensors.base,
+ org.commonreality.sensors.base.impl
