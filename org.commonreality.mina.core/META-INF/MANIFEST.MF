@@ -4,8 +4,8 @@ Bundle-Name: Apache's MINA plugin from org.commonreality
 Bundle-SymbolicName: org.commonreality.mina.core;singleton:=true
 Bundle-Version: 2.0.4.qualifier
 Bundle-Localization: plugin
-Require-Bundle: org.jactr.support,
- org.apache.log4j;resolution:=optional
+Require-Bundle: org.apache.log4j,
+ org.jactr.support;bundle-version="1.2.2"
 Export-Package: org.apache.mina.core,
  org.apache.mina.core.buffer,
  org.apache.mina.core.file,
