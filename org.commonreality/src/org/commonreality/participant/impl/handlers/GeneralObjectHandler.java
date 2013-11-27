@@ -78,7 +78,8 @@ public class GeneralObjectHandler
     return _participant;
   }
 
-  synchronized public void storeObjectData(Collection<IObjectDelta> data, IMessage sourceMessage)
+  synchronized public void storeObjectData(Collection<IObjectDelta> data,
+      IMessage sourceMessage)
   {
     for (IObjectDelta delta : data)
     {
@@ -103,32 +104,38 @@ public class GeneralObjectHandler
 
       if (_outOfOrderAdd.remove(id))
       {
-        LOGGER.error("Recovering out of order add of " + id +" from message : "+sourceMessage.getMessageId());
+        if (LOGGER.isWarnEnabled())
+          LOGGER.warn("Recovering out of order add of " + id
+              + " from message : " + sourceMessage.getMessageId());
         addObjects(Collections.singleton(id), sourceMessage);
       }
       else if (_outOfOrderUpdate.remove(id))
       {
-        LOGGER.error("Recovering out of order update of " + id+" from message : "+sourceMessage.getMessageId());
+        if (LOGGER.isWarnEnabled())
+          LOGGER.warn("Recovering out of order update of " + id
+              + " from message : " + sourceMessage.getMessageId());
         updateObjects(Collections.singleton(id), sourceMessage);
       }
 
     }
   }
-  
-  synchronized public Collection<IObjectDelta> getPendingData(IIdentifier identifier)
+
+  synchronized public Collection<IObjectDelta> getPendingData(
+      IIdentifier identifier)
   {
     Collection<IObjectDelta> delta = _pendingObjectData.get(identifier);
-    if(delta==null)
-      delta = Collections.emptyList();
+    if (delta == null) delta = Collections.emptyList();
     return delta;
   }
 
   @SuppressWarnings("unchecked")
-  synchronized public Collection<IMutableObject> addObjects(Collection<IIdentifier> identifiers, IMessage sourceMessage)
+  synchronized public Collection<IMutableObject> addObjects(
+      Collection<IIdentifier> identifiers, IMessage sourceMessage)
   {
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Adding " + identifiers);
-    Collection<IMutableObject> added = new ArrayList<IMutableObject>(identifiers.size());
-    
+    Collection<IMutableObject> added = new ArrayList<IMutableObject>(
+        identifiers.size());
+
     for (IIdentifier id : identifiers)
     {
       IIdentifier.Type type = id.getType();
@@ -137,7 +144,8 @@ public class GeneralObjectHandler
       if (dataList == null)
       {
         LOGGER.error("Have no data for " + id
-            + ", defering add until we receive data. from message : "+sourceMessage.getMessageId());
+            + ", defering add until we receive data. from message : "
+            + sourceMessage.getMessageId());
         _outOfOrderAdd.add(id);
         continue;
       }
@@ -152,8 +160,11 @@ public class GeneralObjectHandler
       {
         if (!(type.equals(IIdentifier.Type.AGENT) || type
             .equals(IIdentifier.Type.SENSOR)))
-          LOGGER.error("Got a duplicate add command for " + id
-              + ", CR or a participant has screwed up big time. Ignoring. from message : "+sourceMessage.getMessageId());
+          LOGGER
+              .error("Got a duplicate add command for "
+                  + id
+                  + ", CR or a participant has screwed up big time. Ignoring. from message : "
+                  + sourceMessage.getMessageId());
         else if (LOGGER.isDebugEnabled())
           LOGGER
               .debug("Got a duplicate add command for "
@@ -221,20 +232,19 @@ public class GeneralObjectHandler
       }
 
       if (manager != null && mo != null)
-        {
-         manager.add(mo);
-         added.add(mo);
-        }
+      {
+        manager.add(mo);
+        added.add(mo);
+      }
       else
         LOGGER.error("Null object or manager for " + id);
     }
     return added;
   }
-  
-  
 
   @SuppressWarnings("unchecked")
-  synchronized public void removeObjects(Collection<IIdentifier> identifiers, IMessage sourceMessage)
+  synchronized public void removeObjects(Collection<IIdentifier> identifiers,
+      IMessage sourceMessage)
   {
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Removing " + identifiers);
     for (IIdentifier id : identifiers)
@@ -242,17 +252,23 @@ public class GeneralObjectHandler
       List<IObjectDelta> dataList = _pendingObjectData.remove(id);
 
       if (dataList == null)
-        LOGGER.error("Duplicate remove of " + id
-            + " was received. CR or a participant screwed up. Ignoring. from message :"+sourceMessage.getMessageId());
+        LOGGER
+            .error("Duplicate remove of "
+                + id
+                + " was received. CR or a participant screwed up. Ignoring. from message :"
+                + sourceMessage.getMessageId());
       else if (dataList.size() != 0)
         LOGGER.error(dataList.size()
             + " Unprocessed object deltas were still available at removal of "
             + id);
-      
-      if(_outOfOrderAdd.remove(id))
-        LOGGER.error("Never did receive any data for the out of order add of "+id+" from message :"+sourceMessage.getMessageId());
-      if(_outOfOrderUpdate.remove(id))
-        LOGGER.error("Never did receive any data for the out of order update of "+id+" from message :"+sourceMessage.getMessageId());
+
+      if (_outOfOrderAdd.remove(id))
+        LOGGER.error("Never did receive any data for the out of order add of "
+            + id + " from message :" + sourceMessage.getMessageId());
+      if (_outOfOrderUpdate.remove(id))
+        LOGGER
+            .error("Never did receive any data for the out of order update of "
+                + id + " from message :" + sourceMessage.getMessageId());
 
       IMutableObjectManager manager = getActualManager(id.getType());
 
@@ -264,7 +280,8 @@ public class GeneralObjectHandler
   }
 
   @SuppressWarnings("unchecked")
-  synchronized public void updateObjects(Collection<IIdentifier> identifiers, IMessage sourceMessage)
+  synchronized public void updateObjects(Collection<IIdentifier> identifiers,
+      IMessage sourceMessage)
   {
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Updating " + identifiers);
     for (IIdentifier id : identifiers)
@@ -273,8 +290,10 @@ public class GeneralObjectHandler
 
       if (dataList == null || dataList.size() == 0)
       {
-        LOGGER.error("Have no data for " + id
-            + ", defering update until data arrives. from message : "+sourceMessage.getMessageId());
+        if (LOGGER.isWarnEnabled())
+          LOGGER.warn("Have no data for " + id
+              + ", defering update until data arrives. from message : "
+              + sourceMessage.getMessageId());
         _outOfOrderUpdate.add(id);
         continue;
       }
