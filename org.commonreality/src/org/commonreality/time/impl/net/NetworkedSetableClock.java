@@ -21,7 +21,6 @@ import org.commonreality.message.request.time.RequestTime;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.time.IClock;
 import org.commonreality.time.impl.BasicClock;
-import org.commonreality.time.impl.BasicClock.WaitFor;
 
 /**
  * @author developer
@@ -45,22 +44,23 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
     setDefaultWaitTime(100);
   }
 
+  @Override
   protected WaitFor createWaitForTime()
   {
     return new WaitFor() {
+      @Override
       public boolean shouldWait(double currentTime)
       {
         double targetTime = getWaitForTime();
-        boolean shouldWait = targetTime > currentTime || Double.isInfinite(currentTime);
+        boolean shouldWait = Double.isInfinite(currentTime)
+            || targetTime - currentTime > getEpsilon();
+
         /*
          * request time change, send unshifted
          */
         double requested = targetTime - getTimeShift();
-        if (shouldWait)
-        {
-          _participant.send(new RequestTime(_participant.getIdentifier(),
-              requested));
-        }
+        if (shouldWait) _participant.send(new RequestTime(_participant.getIdentifier(),
+            requested));
 
         if (LOGGER.isDebugEnabled())
           LOGGER.debug("Waiting for " + requested + " @ " +currentTime+" "+ shouldWait);
@@ -70,22 +70,22 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
     };
   }
 
+  @Override
   protected WaitFor createWaitForAny()
   {
     return new WaitFor() {
+      @Override
       public boolean shouldWait(double currentTime)
       {
         double targetTime = getWaitForTime();
-        boolean shouldWait = targetTime == currentTime || Double.isInfinite(currentTime);
+        boolean shouldWait = Double.isInfinite(currentTime)
+            || Math.abs(targetTime - currentTime) <= getEpsilon();
 
         /*
          * request time change
          */
-        if (shouldWait)
-        {
-          _participant.send(new RequestTime(_participant.getIdentifier(),
-              IRequestTime.ANY_CHANGE));
-        }
+        if (shouldWait) _participant.send(new RequestTime(_participant.getIdentifier(),
+            IRequestTime.ANY_CHANGE));
 
         return shouldWait;
       }

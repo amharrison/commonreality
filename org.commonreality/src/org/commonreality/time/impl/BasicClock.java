@@ -110,7 +110,7 @@ public class BasicClock implements IClock, ISetableClock
       @Override
       public boolean shouldWait(double currentTime)
       {
-        return currentTime == getWaitForTime();
+        return Math.abs(getWaitForTime() - currentTime) <= getEpsilon();
       }
     };
   }
@@ -310,6 +310,16 @@ public class BasicClock implements IClock, ISetableClock
 
     private ThreadLocal<Double> _timeToWait = new ThreadLocal<Double>();
 
+    /**
+     * epislon used for delta calculations, currently 0.0001
+     * 
+     * @return
+     */
+    protected double getEpsilon()
+    {
+      return 0.0001;
+    }
+
     public void setWaitForTime(double time)
     {
       _timeToWait.set(time);
@@ -322,8 +332,9 @@ public class BasicClock implements IClock, ISetableClock
 
     public boolean shouldWait(double currentTime)
     {
-      return getWaitForTime() < currentTime;
+      return getWaitForTime() - currentTime > getEpsilon();
     }
+
 
   }
 }

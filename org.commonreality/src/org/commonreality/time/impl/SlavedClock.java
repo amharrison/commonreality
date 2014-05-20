@@ -24,7 +24,8 @@ public class SlavedClock extends WrappedClock
   @Override
   public double waitForTime(double time) throws InterruptedException
   {
-    while (time > getTime())
+    // while (time > getTime())
+    while (time - getTime() > 0.0001)
       waitForChange();
     return getTime();
   }

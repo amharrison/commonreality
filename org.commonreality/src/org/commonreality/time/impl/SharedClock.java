@@ -26,13 +26,17 @@ public class SharedClock extends OwnedClock<Thread>
    */
   static private final Log LOGGER = LogFactory.getLog(SharedClock.class);
 
+  @Override
   protected WaitFor createWaitForTime()
   {
     return new WaitFor() {
+      @Override
       public boolean shouldWait(double currentTime)
       {
         double targetTime = getWaitForTime();
-        boolean shouldWait = targetTime > currentTime || Double.isInfinite(currentTime);
+        boolean shouldWait = Double.isInfinite(currentTime)
+            || targetTime - currentTime > getEpsilon();
+
         if (shouldWait)
         {
           Thread current = Thread.currentThread();
@@ -49,13 +53,16 @@ public class SharedClock extends OwnedClock<Thread>
     };
   }
 
+  @Override
   protected WaitFor createWaitForAny()
   {
     return new WaitFor() {
+      @Override
       public boolean shouldWait(double currentTime)
       {
         double targetTime = getWaitForTime();
-        boolean shouldWait = targetTime == currentTime || Double.isInfinite(currentTime);
+        boolean shouldWait = Double.isInfinite(currentTime)
+            || Math.abs(targetTime - currentTime) <= getEpsilon();
 
         if (shouldWait)
         {
