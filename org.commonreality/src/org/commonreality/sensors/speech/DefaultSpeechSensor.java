@@ -187,7 +187,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
       if (durationClass != null && durationClass.trim().length() != 0)
         LOGGER.error("Could not load " + durationClass + " using default. ", e);
 
-      final Map<String, String> equationOptions = new TreeMap<String, String>(
+      Map<String, String> equationOptions = new TreeMap<String, String>(
           options);
       _durationEquation = new DefaultVocalizationTimingEquation(equationOptions);
     }
@@ -195,8 +195,12 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
     if (options.containsKey(SPEAKER))
       try
       {
-        _actualSpeaker = (ISpeaker) getClass().getClassLoader().loadClass(
+        ISpeaker speaker = (ISpeaker) getClass().getClassLoader()
+            .loadClass(
             options.get(SPEAKER)).newInstance();
+        speaker.configure(this, new TreeMap<String, String>(options));
+
+        _actualSpeaker = speaker;
       }
       catch (Exception e)
       {
@@ -359,5 +363,10 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
     };
 
     _executor.execute(runner);
+  }
+
+  public void configure(DefaultSpeechSensor sensor, Map<String, String> options)
+  {
+    // noop
   }
 }

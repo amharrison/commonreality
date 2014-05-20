@@ -36,7 +36,7 @@ import org.commonreality.sensors.handlers.ICommandTimingEquation;
 
   public double computeTimings(DeltaTracker<IMutableObject> command)
   {
-    String text = ((VocalizationCommand) command.get()).getText();
+    String text = ((VocalizationCommand) command.get()).getText().trim();
     double charactersPerSecond = 20.0;
 
     if (equationOptions.containsKey("CharactersPerSecond"))
@@ -54,6 +54,8 @@ import org.commonreality.sensors.handlers.ICommandTimingEquation;
 
     if (text.length() != 0)
       duration = text.length() / charactersPerSecond;
+
+    if (duration < 0.01) duration = 0.01;
 
     command.setProperty(IEfferentCommand.ESTIMATED_DURATION, duration);
     return duration;

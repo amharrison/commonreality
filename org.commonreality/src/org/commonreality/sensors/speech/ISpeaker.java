@@ -3,6 +3,8 @@ package org.commonreality.sensors.speech;
 /*
  * default logging
  */
+import java.util.Map;
+
 import org.commonreality.modalities.vocal.VocalizationCommand;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.sensors.handlers.EfferentCommandHandler;
@@ -28,4 +30,13 @@ public interface ISpeaker
    * @param vocalization
    */
   public void speak(IAgentObject speaker, VocalizationCommand vocalization);
+
+  /**
+   * allow the speaker to be configured.
+   * 
+   * @param sensor
+   * @param options
+   *          configuration map provided to speech sensor
+   */
+  public void configure(DefaultSpeechSensor sensor, Map<String, String> options);
 }
