@@ -59,7 +59,11 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
          * request time change, send unshifted
          */
         double requested = targetTime - getTimeShift();
-        if (shouldWait) _participant.send(new RequestTime(_participant.getIdentifier(),
+
+        // always make the request.. regardless of epsilon
+
+        if (targetTime > currentTime)
+        _participant.send(new RequestTime(_participant.getIdentifier(),
             requested));
 
         if (LOGGER.isDebugEnabled())
@@ -84,7 +88,8 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
         /*
          * request time change
          */
-        if (shouldWait) _participant.send(new RequestTime(_participant.getIdentifier(),
+
+        _participant.send(new RequestTime(_participant.getIdentifier(),
             IRequestTime.ANY_CHANGE));
 
         return shouldWait;
