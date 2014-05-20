@@ -305,7 +305,7 @@ public class BasicClock implements IClock, ISetableClock
    * 
    * @author harrison
    */
-  static public class WaitFor implements IClockWaiter
+  public class WaitFor implements IClockWaiter
   {
 
     private ThreadLocal<Double> _timeToWait = new ThreadLocal<Double>();
@@ -332,7 +332,18 @@ public class BasicClock implements IClock, ISetableClock
 
     public boolean shouldWait(double currentTime)
     {
-      return getWaitForTime() - currentTime > getEpsilon();
+      double delta = getWaitForTime() - currentTime;
+      boolean shouldWait = delta > getEpsilon();
+
+      /*
+       * epsilon gap. current time is close enough to target, but still less
+       * than, meaning that while we will clear the clock block, events still
+       * won't fire. In this case, instead of asking for a later time, we will
+       * change our timeShift locally to put us at the current time. </br>
+       */
+      if (!shouldWait && delta > 0) setTimeShift(getTimeShift() + delta);
+
+      return shouldWait;
     }
 
 

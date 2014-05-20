@@ -52,22 +52,32 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
       public boolean shouldWait(double currentTime)
       {
         double targetTime = getWaitForTime();
+        double delta = targetTime - currentTime;
         boolean shouldWait = Double.isInfinite(currentTime)
-            || targetTime - currentTime > getEpsilon();
+            || delta > getEpsilon();
 
         /*
          * request time change, send unshifted
          */
         double requested = targetTime - getTimeShift();
 
-        // always make the request.. regardless of epsilon
+        /*
+         * epsilon gap. current time is close enough to target, but still less
+         * than, meaning that while we will clear the clock block, events still
+         * won't fire. In this case, instead of asking for a later time, we will
+         * change our timeShift locally to put us at the current time. </br>
+         * What's not clear is if this is needed elsewhere..
+         */
+        if (delta < getEpsilon() && delta > 0)
+          setTimeShift(getTimeShift() + delta);
 
         if (targetTime > currentTime)
-        _participant.send(new RequestTime(_participant.getIdentifier(),
-            requested));
+          _participant.send(new RequestTime(_participant.getIdentifier(),
+              requested));
 
         if (LOGGER.isDebugEnabled())
-          LOGGER.debug("Waiting for " + requested + " @ " +currentTime+" "+ shouldWait);
+          LOGGER.debug("Waiting for " + requested + " @ " + currentTime + " "
+              + shouldWait);
 
         return shouldWait;
       }
