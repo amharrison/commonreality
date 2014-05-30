@@ -351,6 +351,8 @@ public class BasicClock implements IClock, ISetableClock
 
     private ThreadLocal<Double> _timeToWait = new ThreadLocal<Double>();
 
+    private double              _epsilon    = 1 / (10 * PRECISION);
+
     /**
      * epislon used for delta calculations, currently 0.0001
      * 
@@ -359,7 +361,7 @@ public class BasicClock implements IClock, ISetableClock
     protected double getEpsilon()
     {
       // currently the rounded size of the constraint
-      return 0.0001;
+      return _epsilon;
     }
 
     public void setWaitForTime(double time)
