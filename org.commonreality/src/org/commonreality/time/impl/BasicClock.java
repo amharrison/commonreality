@@ -24,6 +24,13 @@ import org.commonreality.time.IClock;
 import org.commonreality.time.ISetableClock;
 
 /**
+ * Basic Clock from which others are built. The clock supports shifting local
+ * time, constrainedPrecision, and time shift detection.</br> Constrained
+ * precision is implemented as a defensive position against floating (double)
+ * point resolution errors. By default, the precision is 4 digits (0.0001s). The
+ * runtime property "commonreality.temporalPrecisionDigits" can be set to the
+ * number of digits (4). </br>
+ * 
  * @author developer
  */
 public class BasicClock implements IClock, ISetableClock
@@ -31,29 +38,45 @@ public class BasicClock implements IClock, ISetableClock
   /**
    * logger definition
    */
-  static private final Log LOGGER                   = LogFactory
-                                                        .getLog(BasicClock.class);
+  static private final Log    LOGGER                   = LogFactory
+                                                           .getLog(BasicClock.class);
 
-  protected Lock           _lock                    = new ReentrantLock();
+  protected Lock              _lock                    = new ReentrantLock();
 
-  private Condition        _timeChangeCondition     = _lock.newCondition();
+  protected Condition         _timeChangeCondition     = _lock.newCondition();
 
-  private volatile double  _currentTime             = -0.001;
+  private volatile double     _currentTime             = -0.001;
 
-  private double           _timeShift;
+  private double              _timeShift;
 
-  private boolean          _ignoreTimeDiscrepencies = false;
+  private boolean             _ignoreTimeDiscrepencies = false;
 
-  private WaitFor          _waitFor;
+  private WaitFor             _waitFor;
 
-  private WaitFor          _waitForAny;
+  private WaitFor             _waitForAny;
 
-  private long             _defaultWaitTime         = 0;
+  private long                _defaultWaitTime         = 100;
 
-  static private double    _timeSlipTolerance       = 0.025;
+  static private double       _timeSlipTolerance       = 0.025;
+
+  static private final double PRECISION;
 
   static
   {
+    // 0.0001 1/10th millisecond
+    int precisionDigits = 4;
+    try
+    {
+      precisionDigits = Integer.parseInt(System
+          .getProperty("commonreality.temporalPrecisionDigits"));
+    }
+    catch (Exception e)
+    {
+      precisionDigits = 4;
+    }
+
+    PRECISION = Math.round(Math.pow(10, precisionDigits));
+
     try
     {
       _timeSlipTolerance = Double.parseDouble(System
@@ -75,8 +98,6 @@ public class BasicClock implements IClock, ISetableClock
     _waitFor = createWaitForTime();
     _waitForAny = createWaitForAny();
   }
-
-
 
   /**
    * how much can the desired time differ from the target time before a warning
@@ -166,17 +187,7 @@ public class BasicClock implements IClock, ISetableClock
     WaitFor any = getWaitForAny();
     any.setWaitForTime(now);
 
-    // try
-    // {
-    // _lock.lock();
-    // while (now == getTime())
-    // await(0);
-    // }
-    // finally
-    // {
-    // _lock.unlock();
-    // }
-    return await(any, getDefaultWaitTime());
+    return await(any, Double.NaN, getDefaultWaitTime());
   }
 
   /**
@@ -184,23 +195,9 @@ public class BasicClock implements IClock, ISetableClock
    */
   public double waitForTime(double time) throws InterruptedException
   {
-    // time -= getTimeShift();
     WaitFor wait = getWaitForTime();
     wait.setWaitForTime(time);
-    double rtn = await(wait, getDefaultWaitTime());
-
-    // try
-    // {
-    // _lock.lock();
-    // while (getTime() < time)
-    // await(0);
-    // }
-    // finally
-    // {
-    // _lock.unlock();
-    // }
-
-    // double rtn = getTime();
+    double rtn = await(wait, time, getDefaultWaitTime());
 
     if (time < rtn && !isIgnoringDiscrepencies()
         && Math.abs(rtn - time) >= _timeSlipTolerance)
@@ -218,27 +215,38 @@ public class BasicClock implements IClock, ISetableClock
    *          ms to wait (0 to wait indef)
    * @throws InterruptedException
    */
-  public double await(IClockWaiter waiter, long maxWait)
+  public double await(IClockWaiter waiter, double targetTime, long maxWait)
       throws InterruptedException
   {
-    try
+    targetTime = constrainPrecision(targetTime);
+    double now = getTime();
+    while (waiter.shouldWait(now))
     {
-      _lock.lock();
-      double now = getTime();
-      while (waiter.shouldWait(now))
+      if (!requestTime(targetTime)) try
       {
-        if (maxWait <= 0)
-          _timeChangeCondition.await();
-        else
-          _timeChangeCondition.await(maxWait, TimeUnit.MILLISECONDS);
-        now = getTime();
+        _lock.lock();
+        _timeChangeCondition.await(maxWait, TimeUnit.MILLISECONDS);
       }
-      return getTime();
+      finally
+      {
+        _lock.unlock();
+      }
+      now = getTime();
     }
-    finally
-    {
-      _lock.unlock();
-    }
+
+    return getTime();
+  }
+
+  /**
+   * constrain our precision.
+   * 
+   * @param time
+   * @return
+   */
+  static public double constrainPrecision(double time)
+  {
+    return Math.ceil(time * PRECISION) / PRECISION;
+    // return time;
   }
 
   /**
@@ -246,25 +254,58 @@ public class BasicClock implements IClock, ISetableClock
    * 
    * @param time
    */
-  public double setTime(double time)
+  public double setTime(double requestedTime)
+  {
+    requestedTime = constrainPrecision(requestedTime);
+
+    double last = getTime();
+
+    if (requestedTime < last && !isIgnoringDiscrepencies())
+      if (LOGGER.isWarnEnabled())
+        LOGGER.warn("Attempting to roll clock back from " + last + " to "
+            + requestedTime);
+
+    return setTimeInternal(requestedTime);
+  }
+
+  /**
+   * within the waitForTime() or waitForChange(), when the thread should block,
+   * this is called before the actual block, allowing extenders to send out
+   * requests for time updates, if necessary. Currently noop, returning false.
+   * this can be a blocking event as it is outside of the clock's lock.
+   * 
+   * @param requestedTime
+   *          NaN if waitForChange was called
+   * @return true if the wait should be skipped, that is the requestTime was
+   *         immediately successful. default: false
+   * @throws InterruptedException
+   */
+  protected boolean requestTime(double requestedTime)
+      throws InterruptedException
+  {
+    return false;
+  }
+
+  /**
+   * actually set the time
+   * 
+   * @param requestedTime
+   */
+  protected double setTimeInternal(double requestedTime)
   {
     try
     {
       _lock.lock();
 
-      double last = getTime();
+      _currentTime = constrainPrecision(requestedTime - getTimeShift());
 
-      if (time < last && !isIgnoringDiscrepencies())
-        if (LOGGER.isWarnEnabled())
-          LOGGER.warn("Rolling clock back from " + last + " to " + time);
-
-      _currentTime = time - getTimeShift();
-
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Signalling time=" + time);
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug("Signalling time=" + requestedTime);
 
       // always signal.. just in case
       _timeChangeCondition.signalAll();
-      return getTime();
+
+      return _currentTime;
     }
     finally
     {
@@ -279,7 +320,7 @@ public class BasicClock implements IClock, ISetableClock
 
   public void setTimeShift(double shift)
   {
-    _timeShift = shift;
+    _timeShift = constrainPrecision(shift);
   }
 
   /**
@@ -317,12 +358,13 @@ public class BasicClock implements IClock, ISetableClock
      */
     protected double getEpsilon()
     {
+      // currently the rounded size of the constraint
       return 0.0001;
     }
 
     public void setWaitForTime(double time)
     {
-      _timeToWait.set(time);
+      _timeToWait.set(constrainPrecision(time));
     }
 
     protected double getWaitForTime()
@@ -345,7 +387,6 @@ public class BasicClock implements IClock, ISetableClock
 
       return shouldWait;
     }
-
 
   }
 }

@@ -163,12 +163,14 @@ public class OwnedClock<T> extends BasicClock implements IOwnableClock<T>
 
       if (Double.isNaN(requestedTime))
         requestedTime = Double.POSITIVE_INFINITY;
+      else
+        requestedTime = BasicClock.constrainPrecision(requestedTime);
 
       _requestedTimes.put(owner, requestedTime);
       _heardFrom.add(owner);
 
       if (_heardFrom.containsAll(_owners))
-        updateTime();
+        return updateTime();
       else if (LOGGER.isDebugEnabled())
       {
         HashSet<T> remaining = new HashSet<T>(_owners);
@@ -176,40 +178,6 @@ public class OwnedClock<T> extends BasicClock implements IOwnableClock<T>
         LOGGER.debug("Still waiting to hear from " + remaining);
       }
 
-      /*
-       * NaN is a general request that the requestor has no interest in changing
-       * time, but is notifying that it is waiting for an update (waitForChange)
-       */
-      // if (!Double.isNaN(requestedTime))
-      // {
-      // if (requestedTime < getTime())
-      // {
-      // if (LOGGER.isWarnEnabled())
-      // LOGGER.warn("Time regress requested by " + owner + ". Wanted "
-      // + requestedTime + " is currently " + getTime()
-      // + ", setting to minimum requested time " + _smallestTime);
-      // requestedTime = _smallestTime;
-      // }
-      //
-      // if (requestedTime < _smallestTime)
-      // {
-      // if (LOGGER.isDebugEnabled())
-      // LOGGER.debug("New minimum time " + requestedTime + " requested by "
-      // + owner);
-      // _smallestTime = requestedTime;
-      // }
-      // }
-      /*
-       * we've heard from everyone.. update!
-       */
-      // if (_heardFrom.containsAll(_owners))
-      // updateTime();
-      // else if (LOGGER.isDebugEnabled())
-      // {
-      // HashSet<T> remaining = new HashSet<T>(_owners);
-      // remaining.removeAll(_heardFrom);
-      // LOGGER.debug("Still waiting to hear from " + remaining);
-      // }
       return getTime();
     }
     finally
@@ -221,8 +189,9 @@ public class OwnedClock<T> extends BasicClock implements IOwnableClock<T>
   /**
    * update the clock..
    */
-  protected void updateTime()
+  protected double updateTime()
   {
+    double newTime = 0;
     try
     {
       _lock.lock();
@@ -231,26 +200,20 @@ public class OwnedClock<T> extends BasicClock implements IOwnableClock<T>
       double minimum = mininumRequestedTime();
 
       if (Double.isInfinite(minimum)) minimum = 0.05 + getTime();
-      double newTime = minimum;
+      newTime = minimum;
 
       if (LOGGER.isDebugEnabled()) LOGGER.debug("Updating time " + minimum);
 
       for(Map.Entry<T, Double> entry : _requestedTimes.entrySet())
         if(entry.getValue()<=minimum)
           _heardFrom.remove(entry.getKey());
-
-      setTime(newTime);
     }
     finally
     {
       _lock.unlock();
     }
+
+    return setTime(newTime);
   }
 
-  @Override
-  public double setTime(double newTime)
-  {
-    // _smallestTime = Double.POSITIVE_INFINITY;
-    return super.setTime(newTime);
-  }
 }

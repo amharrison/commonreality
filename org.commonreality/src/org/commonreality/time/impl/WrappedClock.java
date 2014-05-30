@@ -26,7 +26,7 @@ public class WrappedClock implements IClock
   
   public double getTime()
   {
-    return _clock.getTime()+getTimeShift();
+    return BasicClock.constrainPrecision(_clock.getTime() + getTimeShift());
   }
 
   public double getTimeShift()
@@ -36,17 +36,25 @@ public class WrappedClock implements IClock
 
   public void setTimeShift(double shift)
   {
-   _timeShift = shift;
+    _timeShift = BasicClock.constrainPrecision(shift);
   }
 
   public double waitForChange() throws InterruptedException
   {
-    return _timeShift + _clock.waitForChange();
+    return BasicClock.constrainPrecision(getTimeShift()
+        + _clock.waitForChange());
   }
 
   public double waitForTime(double time) throws InterruptedException
   {
-    return _timeShift + _clock.waitForTime(time - getTimeShift());
+    return BasicClock.constrainPrecision(getTimeShift()
+        + _clock.waitForTime(BasicClock.constrainPrecision(time
+            - getTimeShift())));
+  }
+
+  public IClock getMasterClock()
+  {
+    return _clock;
   }
 
 }

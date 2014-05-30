@@ -16,7 +16,6 @@ package org.commonreality.time.impl.net;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.message.command.time.ITimeCommand;
-import org.commonreality.message.request.time.IRequestTime;
 import org.commonreality.message.request.time.RequestTime;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.time.IClock;
@@ -37,6 +36,8 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
   private ITimeCommand     _currentTimeCommand;
 
   private IParticipant     _participant;
+
+  protected double         _epsilonCreap = 0;
 
   public NetworkedSetableClock(IParticipant participant)
   {
@@ -65,15 +66,19 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
          * epsilon gap. current time is close enough to target, but still less
          * than, meaning that while we will clear the clock block, events still
          * won't fire. In this case, instead of asking for a later time, we will
-         * change our timeShift locally to put us at the current time. </br>
-         * What's not clear is if this is needed elsewhere..
+         * change our timeShift locally to put us at the current time.
          */
         if (delta < getEpsilon() && delta > 0)
+        {
           setTimeShift(getTimeShift() + delta);
+          _epsilonCreap += delta;
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Epislon hole : %f", _epsilonCreap));
+        }
 
-        if (targetTime > currentTime)
-          _participant.send(new RequestTime(_participant.getIdentifier(),
-              requested));
+        // if (targetTime > currentTime)
+        // _participant.send(new RequestTime(_participant.getIdentifier(),
+        // requested));
 
         if (LOGGER.isDebugEnabled())
           LOGGER.debug("Waiting for " + requested + " @ " + currentTime + " "
@@ -99,52 +104,23 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
          * request time change
          */
 
-        _participant.send(new RequestTime(_participant.getIdentifier(),
-            IRequestTime.ANY_CHANGE));
+        // _participant.send(new RequestTime(_participant.getIdentifier(),
+        // IRequestTime.ANY_CHANGE));
 
         return shouldWait;
       }
     };
   }
 
-  // /**
-  // * @see org.commonreality.time.IClock#waitForChange()
-  // */
-  // public double waitForChange() throws InterruptedException
-  // {
-  // double now = _clock.getTime();
-  // while (now == _clock.getTime())
-  // {
-  // _participant.send(new RequestTime(_participant.getIdentifier(),
-  // IRequestTime.ANY_CHANGE));
-  // _clock.await(750);
-  // }
-  // return _clock.getTime();
-  // }
-  //
-  // /**
-  // * @see org.commonreality.time.IClock#waitForTime(double)
-  // */
-  // public double waitForTime(double time) throws InterruptedException
-  // {
-  // while (_clock.getTime() < time)
-  // {
-  // /*
-  // * request it unshifted
-  // */
-  // _participant.send(new RequestTime(_participant.getIdentifier(), time -
-  // _clock.getTimeShift()));
-  // _clock.await(750);
-  // }
-  //
-  // double rtn = _clock.getTime();
-  //
-  // if (time < rtn)
-  // if (LOGGER.isWarnEnabled())
-  // LOGGER.warn("Time slippage detected, wanted " + time + " got " + rtn);
-  //
-  // return rtn;
-  // }
+  @Override
+  protected boolean requestTime(double time)
+  {
+    // if nan, requests any change
+    _participant.send(new RequestTime(_participant.getIdentifier(), time));
+    return false;
+  }
+
+
 
   public void setCurrentTimeCommand(ITimeCommand timeCommand)
   {

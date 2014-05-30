@@ -33,22 +33,23 @@ public class SharedClock extends OwnedClock<Thread>
       @Override
       public boolean shouldWait(double currentTime)
       {
-        double targetTime = getWaitForTime();
-        boolean shouldWait = Double.isInfinite(currentTime)
-            || targetTime - currentTime > getEpsilon();
-
-        if (shouldWait)
-        {
-          Thread current = Thread.currentThread();
-          boolean isOwner = isOwner(current);
-          /*
-           * attempt to set the time
-           */
-          if (isOwner && targetTime <= setTime(current, targetTime))
-            return false;
-        }
-
-        return shouldWait;
+        return super.shouldWait(currentTime);
+        // double targetTime = getWaitForTime();
+        // boolean shouldWait = Double.isInfinite(currentTime)
+        // || targetTime - currentTime > getEpsilon();
+        //
+        // if (shouldWait)
+        // {
+        // Thread current = Thread.currentThread();
+        // boolean isOwner = isOwner(current);
+        // /*
+        // * attempt to set the time
+        // */
+        // if (isOwner && targetTime <= setTime(current, targetTime))
+        // return false;
+        // }
+        //
+        // return shouldWait;
       }
     };
   }
@@ -60,88 +61,129 @@ public class SharedClock extends OwnedClock<Thread>
       @Override
       public boolean shouldWait(double currentTime)
       {
-        double targetTime = getWaitForTime();
-        boolean shouldWait = Double.isInfinite(currentTime)
-            || Math.abs(targetTime - currentTime) <= getEpsilon();
+        return super.shouldWait(currentTime);
 
-        if (shouldWait)
-        {
-          Thread current = Thread.currentThread();
-          boolean isOwner = isOwner(current);
-          /*
-           * attempt to set the time
-           */
-
-          if (isOwner && targetTime != setTime(current, Double.NaN))
-            return false;
-        }
-
-        return shouldWait;
+        // double targetTime = getWaitForTime();
+        // boolean shouldWait = Double.isInfinite(currentTime)
+        // || Math.abs(targetTime - currentTime) <= getEpsilon();
+        //
+        // if (shouldWait)
+        // {
+        // Thread current = Thread.currentThread();
+        // boolean isOwner = isOwner(current);
+        // /*
+        // * attempt to set the time
+        // */
+        //
+        // if (isOwner && targetTime != setTime(current, Double.NaN))
+        // return false;
+        // }
+        //
+        // return shouldWait;
       }
     };
   }
 
-//  @Override
-//  public double waitForTime(double time) throws InterruptedException
-//  {
-//    // Thread current = Thread.currentThread();
-//    // boolean isOwner = isOwner(current);
-//    // try
-//    // {
-//    // _lock.lock();
-//    // while (getTime() < time)
-//    // {
-//    // if (isOwner)
-//    // {
-//    // if (time <= setTime(current, time))
-//    // {
-//    // if (LOGGER.isDebugEnabled()) LOGGER.debug("its my time");
-//    // break;
-//    // }
-//    // }
-//    // await(0);
-//    // if (LOGGER.isDebugEnabled()) LOGGER.debug("awoke");
-//    // }
-//    // }
-//    // finally
-//    // {
-//    // _lock.unlock();
-//    // }
-//
-//    // time -= getTimeShift();
-//    WaitFor wait = getWaitForTime();
-//    wait.setWaitForTime(time);
-//    double rtn = await(wait, 0);
-//
-//    if (time < rtn)
-//      if (LOGGER.isWarnEnabled())
-//        LOGGER.warn("Time slippage detected, wanted " + time + " got " + rtn);
-//
-//    return rtn;
-//  }
-//
-//  @Override
-//  public double waitForChange() throws InterruptedException
-//  {
-//    // Thread current = Thread.currentThread();
-//    // boolean isOwner = isOwner(current);
-//    // double now = getTime();
-//    // try
-//    // {
-//    // _lock.lock();
-//    // while (now == getTime())
-//    // {
-//    // if (isOwner) if (now != setTime(current, Double.NaN)) break;
-//    // await(0);
-//    // }
-//    // }
-//    // finally
-//    // {
-//    // _lock.unlock();
-//    // }
-//    // return getTime();
-//    WaitFor any = getWaitForAny();
-//    any.setWaitForTime(getTime());
-//    return await(any, 0);
-//  }
+  /**
+   * since this might actually set the time to the requestedTime, the return
+   * value varies. Basically, if the requestedTime ends up being the lowest bid,
+   * we return true
+   * 
+   * @throws InterruptedException
+   */
+  @Override
+  protected boolean requestTime(double requestedTime)
+      throws InterruptedException
+  {
+    Thread current = Thread.currentThread();
+    boolean isOwner = isOwner(current);
+    boolean rtn = false;
+    /*
+     * attempt to set the time.If successful, we report back that there should
+     * be no blocking on return. if requestedTime is NaN, this will be an any.
+     */
+    if (isOwner)
+    {
+      double returnedTime = 0;
+      if (Double.isNaN(requestedTime))
+      {
+        returnedTime = setTime(current, Double.NaN);
+        rtn = requestedTime != returnedTime;
+      }
+      else
+      {
+        returnedTime = setTime(current, requestedTime);
+        rtn = requestedTime <= returnedTime;
+      }
+    }
+
+    /*
+     * normally, block on return
+     */
+    return rtn;
+  }
+
+  // @Override
+  // public double waitForTime(double time) throws InterruptedException
+  // {
+  // // Thread current = Thread.currentThread();
+  // // boolean isOwner = isOwner(current);
+  // // try
+  // // {
+  // // _lock.lock();
+  // // while (getTime() < time)
+  // // {
+  // // if (isOwner)
+  // // {
+  // // if (time <= setTime(current, time))
+  // // {
+  // // if (LOGGER.isDebugEnabled()) LOGGER.debug("its my time");
+  // // break;
+  // // }
+  // // }
+  // // await(0);
+  // // if (LOGGER.isDebugEnabled()) LOGGER.debug("awoke");
+  // // }
+  // // }
+  // // finally
+  // // {
+  // // _lock.unlock();
+  // // }
+  //
+  // // time -= getTimeShift();
+  // WaitFor wait = getWaitForTime();
+  // wait.setWaitForTime(time);
+  // double rtn = await(wait, 0);
+  //
+  // if (time < rtn)
+  // if (LOGGER.isWarnEnabled())
+  // LOGGER.warn("Time slippage detected, wanted " + time + " got " + rtn);
+  //
+  // return rtn;
+  // }
+  //
+  // @Override
+  // public double waitForChange() throws InterruptedException
+  // {
+  // // Thread current = Thread.currentThread();
+  // // boolean isOwner = isOwner(current);
+  // // double now = getTime();
+  // // try
+  // // {
+  // // _lock.lock();
+  // // while (now == getTime())
+  // // {
+  // // if (isOwner) if (now != setTime(current, Double.NaN)) break;
+  // // await(0);
+  // // }
+  // // }
+  // // finally
+  // // {
+  // // _lock.unlock();
+  // // }
+  // // return getTime();
+  // WaitFor any = getWaitForAny();
+  // any.setWaitForTime(getTime());
+  // return await(any, 0);
+  // }
 }
