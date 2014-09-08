@@ -45,7 +45,7 @@ public class BasicClock implements IClock, ISetableClock
 
   protected Condition         _timeChangeCondition     = _lock.newCondition();
 
-  private volatile double     _currentTime             = -0.001;
+  private volatile double     _globalTime              = -0.001;
 
   private double              _timeShift;
 
@@ -154,7 +154,7 @@ public class BasicClock implements IClock, ISetableClock
     try
     {
       _lock.lock();
-      return _currentTime + getTimeShift();
+      return _globalTime + getTimeShift();
     }
     finally
     {
@@ -192,37 +192,41 @@ public class BasicClock implements IClock, ISetableClock
 
   /**
    * @see org.commonreality.time.IClock#waitForTime(double)
+   * @return localTime
    */
-  public double waitForTime(double time) throws InterruptedException
+  public double waitForTime(double localTime) throws InterruptedException
   {
+    double globalTime = constrainPrecision(localTime) - getTimeShift();
     WaitFor wait = getWaitForTime();
-    wait.setWaitForTime(time);
-    double rtn = await(wait, time, getDefaultWaitTime());
+    wait.setWaitForTime(globalTime);
+    double rtnLocal = await(wait, globalTime, getDefaultWaitTime())
+        + getTimeShift();
 
-    if (time < rtn && !isIgnoringDiscrepencies()
-        && Math.abs(rtn - time) >= _timeSlipTolerance)
+    if (localTime < rtnLocal && !isIgnoringDiscrepencies()
+        && Math.abs(rtnLocal - localTime) >= _timeSlipTolerance)
       if (LOGGER.isWarnEnabled())
-        LOGGER.warn(rtn - time + " time slippage detected, wanted " + time
-            + " got " + rtn);
+        LOGGER.warn(rtnLocal - localTime + " time slippage detected, wanted "
+            + localTime + " got " + rtnLocal);
 
-    return rtn;
+    return rtnLocal;
   }
 
   /**
-   * wait on the signal..
-   * 
+   * @param targetGlobalTime
+   *          is global time (unshifted)
+   * @return global Time
    * @param maxWait
    *          ms to wait (0 to wait indef)
    * @throws InterruptedException
    */
-  public double await(IClockWaiter waiter, double targetTime, long maxWait)
-      throws InterruptedException
+  private double await(IClockWaiter waiter, double targetGlobalTime,
+      long maxWait) throws InterruptedException
   {
-    targetTime = constrainPrecision(targetTime);
-    double now = getTime();
-    while (waiter.shouldWait(now))
+    // targetTime = constrainPrecision(targetTime);
+    double globalTime = getTime() - getTimeShift();
+    while (waiter.shouldWait(globalTime))
     {
-      if (!requestTime(targetTime)) try
+      if (!requestTime(targetGlobalTime)) try
       {
         _lock.lock();
         _timeChangeCondition.await(maxWait, TimeUnit.MILLISECONDS);
@@ -231,10 +235,10 @@ public class BasicClock implements IClock, ISetableClock
       {
         _lock.unlock();
       }
-      now = getTime();
+      globalTime = getTime() - getTimeShift();
     }
 
-    return getTime();
+    return getTime() - getTimeShift();
   }
 
   /**
@@ -254,18 +258,18 @@ public class BasicClock implements IClock, ISetableClock
    * 
    * @param time
    */
-  public double setTime(double requestedTime)
+  public double setTime(double localTime)
   {
-    requestedTime = constrainPrecision(requestedTime);
+    localTime = constrainPrecision(localTime);
 
-    double last = getTime();
+    double lastLocal = getTime();
 
-    if (requestedTime < last && !isIgnoringDiscrepencies())
+    if (localTime < lastLocal && !isIgnoringDiscrepencies())
       if (LOGGER.isWarnEnabled())
-        LOGGER.warn("Attempting to roll clock back from " + last + " to "
-            + requestedTime);
+        LOGGER.warn("Attempting to roll clock back from " + lastLocal + " to "
+            + localTime);
 
-    return setTimeInternal(requestedTime);
+    return setTimeInternal(localTime);
   }
 
   /**
@@ -274,13 +278,13 @@ public class BasicClock implements IClock, ISetableClock
    * requests for time updates, if necessary. Currently noop, returning false.
    * this can be a blocking event as it is outside of the clock's lock.
    * 
-   * @param requestedTime
+   * @param globalRequestedTime
    *          NaN if waitForChange was called
    * @return true if the wait should be skipped, that is the requestTime was
    *         immediately successful. default: false
    * @throws InterruptedException
    */
-  protected boolean requestTime(double requestedTime)
+  protected boolean requestTime(double globalRequestedTime)
       throws InterruptedException
   {
     return false;
@@ -289,23 +293,25 @@ public class BasicClock implements IClock, ISetableClock
   /**
    * actually set the time
    * 
-   * @param requestedTime
+   * @param localTime
    */
-  protected double setTimeInternal(double requestedTime)
+  protected double setTimeInternal(double localTime)
   {
     try
     {
       _lock.lock();
 
-      _currentTime = constrainPrecision(requestedTime - getTimeShift());
+      _globalTime = localTime - getTimeShift();
 
       if (LOGGER.isDebugEnabled())
-        LOGGER.debug("Signalling time=" + requestedTime);
+        LOGGER.debug(String.format(
+            "Signalling local time (%.5f) from global time (%.5f) shift(%.5f)",
+            localTime, _globalTime, getTimeShift()));
 
       // always signal.. just in case
       _timeChangeCondition.signalAll();
 
-      return _currentTime;
+      return _globalTime;
     }
     finally
     {
@@ -321,6 +327,9 @@ public class BasicClock implements IClock, ISetableClock
   public void setTimeShift(double shift)
   {
     _timeShift = constrainPrecision(shift);
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Set timeshift %.5f from %.5f", _timeShift,
+          shift));
   }
 
   /**
@@ -366,7 +375,7 @@ public class BasicClock implements IClock, ISetableClock
 
     public void setWaitForTime(double time)
     {
-      _timeToWait.set(constrainPrecision(time));
+      _timeToWait.set(time);
     }
 
     protected double getWaitForTime()
@@ -385,7 +394,12 @@ public class BasicClock implements IClock, ISetableClock
        * won't fire. In this case, instead of asking for a later time, we will
        * change our timeShift locally to put us at the current time. </br>
        */
-      if (!shouldWait && delta > 0) setTimeShift(getTimeShift() + delta);
+      if (!shouldWait && delta > 0)
+      {
+        if (LOGGER.isWarnEnabled())
+          LOGGER.warn(String.format("Adjusting time shift by %.5f", delta));
+        setTimeShift(getTimeShift() + delta);
+      }
 
       return shouldWait;
     }

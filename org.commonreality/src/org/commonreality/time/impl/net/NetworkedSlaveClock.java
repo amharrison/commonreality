@@ -57,7 +57,7 @@ public class NetworkedSlaveClock implements IClock, INetworkedClock
    */
   public double waitForTime(double time) throws InterruptedException
   {
-    return _clock.waitForTime(time+_clock.getTimeShift());
+    return _clock.waitForTime(time);
   }
 
   public void setCurrentTimeCommand(ITimeCommand timeCommand)
