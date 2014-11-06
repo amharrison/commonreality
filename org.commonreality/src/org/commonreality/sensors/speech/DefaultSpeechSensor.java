@@ -187,8 +187,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
       if (durationClass != null && durationClass.trim().length() != 0)
         LOGGER.error("Could not load " + durationClass + " using default. ", e);
 
-      Map<String, String> equationOptions = new TreeMap<String, String>(
-          options);
+      Map<String, String> equationOptions = new TreeMap<String, String>(options);
       _durationEquation = new DefaultVocalizationTimingEquation(equationOptions);
     }
 
@@ -196,8 +195,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
       try
       {
         ISpeaker speaker = (ISpeaker) getClass().getClassLoader()
-            .loadClass(
-            options.get(SPEAKER)).newInstance();
+            .loadClass(options.get(SPEAKER)).newInstance();
         speaker.configure(this, new TreeMap<String, String>(options));
 
         _actualSpeaker = speaker;
@@ -205,8 +203,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
       catch (Exception e)
       {
         LOGGER.warn(
-            "Could not create actual speaker from "
-            + options.get(SPEAKER), e);
+            "Could not create actual speaker from " + options.get(SPEAKER), e);
       }
 
     _options.putAll(options);
@@ -263,7 +260,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
   @Override
   public void shutdown() throws Exception
   {
-    _executor.shutdownNow();
+    if (_executor != null) _executor.shutdownNow();
     _executor = null;
     super.shutdown();
   }
@@ -354,8 +351,8 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
         IIdentifier src = getIdentifier();
         IIdentifier dest = agent.getIdentifier();
 
-        send(new ObjectDataRequest(src, dest, Collections
-            .singleton(new FullObjectDelta(mouth))));
+        send(new ObjectDataRequest(src, dest,
+            Collections.singleton(new FullObjectDelta(mouth))));
 
         send(new ObjectCommandRequest(src, dest, IObjectCommand.Type.ADDED,
             Collections.singleton(mouthId)));
