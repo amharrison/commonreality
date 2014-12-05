@@ -112,6 +112,9 @@ public class GeneralAuralProcessor implements IRealObjectListener
 
       _tracker.add(percept, onset, onset+duration);
     }
+
+    double now = _sensor.getClock().getTime();
+    if (onset >= now) _tracker.update(now, _sensor);
   }
 
   protected void removeAural(IAfferentObject aural)

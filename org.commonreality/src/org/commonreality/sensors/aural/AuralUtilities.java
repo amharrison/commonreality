@@ -30,7 +30,7 @@ public class AuralUtilities
 
   private ISensor                    _sensor;
 
-  private AddRemoveTracker          _tracker;
+  private AddRemoveTracker           _tracker;
 
   public AuralUtilities(ISensor sensor)
   {
@@ -40,6 +40,7 @@ public class AuralUtilities
 
   /**
    * request and configure a new sound. this call may block on the IO thread
+   * 
    * @param types
    * @param content
    * @param onset
@@ -51,14 +52,14 @@ public class AuralUtilities
   {
     IMutableObject aural = (IMutableObject) ((IRequestableRealObjectManager) _sensor
         .getRealObjectManager()).request(_sensor.getIdentifier());
-    
+
     aural.setProperty(IAuralPropertyHandler.AURAL_MODALITY, Boolean.TRUE);
     aural.setProperty(IAuralPropertyHandler.IS_AUDIBLE, Boolean.TRUE);
     aural.setProperty(IAuralPropertyHandler.ONSET, onset);
     aural.setProperty(IAuralPropertyHandler.DURATION, duration);
     aural.setProperty(IAuralPropertyHandler.TOKEN, content);
     aural.setProperty(IAuralPropertyHandler.TYPE, types);
-    
+
     return (IRealObject) aural;
   }
 
@@ -73,7 +74,13 @@ public class AuralUtilities
 
   public void queueSound(IRealObject aural)
   {
-    _tracker.add(aural, getOnsetTime(aural), getExpirationTime(aural));
+    double onset = getOnsetTime(aural);
+    double expiration = getExpirationTime(aural);
+
+    _tracker.add(aural, onset, expiration);
+
+    double now = _sensor.getClock().getTime();
+    if (onset >= now) _tracker.update(now, _sensor);
   }
 
   public double update(double time)
@@ -83,13 +90,13 @@ public class AuralUtilities
 
   protected double getOnsetTime(IRealObject object)
   {
-    return ((Double) object.getProperty(IAuralPropertyHandler.ONSET));
+    return (Double) object.getProperty(IAuralPropertyHandler.ONSET);
   }
-  
+
   protected double getExpirationTime(IRealObject object)
   {
-    return ((Double) object.getProperty(IAuralPropertyHandler.ONSET))
-        + ((Double) object.getProperty(IAuralPropertyHandler.DURATION));
+    return (Double) object.getProperty(IAuralPropertyHandler.ONSET)
+        + (Double) object.getProperty(IAuralPropertyHandler.DURATION);
   }
 
 }

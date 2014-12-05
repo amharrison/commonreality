@@ -68,16 +68,19 @@ public class DefaultAuralSensor extends AbstractSensor
          * at the top of each clock cycle we check for speech events that have
          * yet to be started or have expired
          */
-        double currentTime = getClock().getTime();
-        _auralUtilities.update(currentTime);
-        _auralProcessor.update(currentTime);
 
         try
         {
+          double currentTime = getClock().getTime();
+          double nextTime = _auralUtilities.update(currentTime);
+          _auralProcessor.update(currentTime);
           /*
            * let's wait for the clock to update
            */
-          getClock().waitForChange();
+          if (Double.isNaN(nextTime))
+            getClock().waitForChange();
+          else
+            getClock().waitForTime(nextTime);
 
         }
         catch (InterruptedException e)
@@ -127,7 +130,6 @@ public class DefaultAuralSensor extends AbstractSensor
      * create and name the executor
      */
     _executor = Executors.newSingleThreadExecutor(getCentralThreadFactory());
-
 
     getRealObjectManager().addListener(_auralProcessor, _executor);
 
