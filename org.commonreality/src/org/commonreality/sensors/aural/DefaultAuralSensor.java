@@ -189,6 +189,9 @@ public class DefaultAuralSensor extends AbstractSensor
   public void queueSound(IRealObject aural)
   {
     _auralUtilities.queueSound(aural);
+
+    // local sound source, we transform it immediately and locally
+    _auralProcessor.addAural(aural);
   }
 
 }

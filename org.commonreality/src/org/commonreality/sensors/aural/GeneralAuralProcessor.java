@@ -36,7 +36,8 @@ import org.commonreality.sensors.handlers.AddRemoveTracker;
  * If additional properties need to be set on a percept level (i.e. spatial
  * localization of the sound), this can be done by adding an
  * {@link IAuralMutator} via
- * {@link #add(org.commonreality.sensors.aural.GeneralAuralProcessor.IAuralMutator)}<br>
+ * {@link #add(org.commonreality.sensors.aural.GeneralAuralProcessor.IAuralMutator)}
+ * <br>
  * <br>
  * This should be attached to the sensors {@link RealObjectManager} on an
  * executor other than the sensors IO executor (since it may have to block to
@@ -49,17 +50,16 @@ public class GeneralAuralProcessor implements IRealObjectListener
   /**
    * Logger definition
    */
-  static private final transient Log                   LOGGER        = LogFactory
-                                                                         .getLog(GeneralAuralProcessor.class);
+  static private final transient Log  LOGGER        = LogFactory
+                                                        .getLog(GeneralAuralProcessor.class);
 
-  
-  private AddRemoveTracker _tracker = new AddRemoveTracker();
+  private AddRemoveTracker            _tracker      = new AddRemoveTracker();
 
-  private ISensor                                      _sensor;
+  private ISensor                     _sensor;
 
-  private DefaultAuralPropertyHandler                  _auralHandler = new DefaultAuralPropertyHandler();
+  private DefaultAuralPropertyHandler _auralHandler = new DefaultAuralPropertyHandler();
 
-  private Collection<IAuralMutator>                    _mutators     = new ArrayList<IAuralMutator>();
+  private Collection<IAuralMutator>   _mutators     = new ArrayList<IAuralMutator>();
 
   public GeneralAuralProcessor(ISensor sensor)
   {
@@ -71,10 +71,9 @@ public class GeneralAuralProcessor implements IRealObjectListener
     _mutators.add(mutator);
   }
 
-  
   /**
-   * update all {@link IAfferentObject}s representing percepts of hearable
-   * aural objects, removing any of those that have elapsed.
+   * update all {@link IAfferentObject}s representing percepts of hearable aural
+   * objects, removing any of those that have elapsed.
    * 
    * @param currentTime
    * @return next expiration time or Double.NaN
@@ -90,7 +89,6 @@ public class GeneralAuralProcessor implements IRealObjectListener
     double duration = _auralHandler.getDuration(auralObject);
     IRequestableAfferentObjectManager raom = _sensor.getAfferentObjectManager();
 
-    
     Map<String, Object> propertyMap = auralObject.getPropertyMap();
     /*
      * for each connected agent.. create the afferent
@@ -110,11 +108,17 @@ public class GeneralAuralProcessor implements IRealObjectListener
       for (IAuralMutator mutator : _mutators)
         mutator.mutate(percept, auralObject, _sensor);
 
-      _tracker.add(percept, onset, onset+duration);
+      _tracker.add(percept, onset, onset + duration);
     }
 
     double now = _sensor.getClock().getTime();
-    if (onset >= now) _tracker.update(now, _sensor);
+    if (onset >= now)
+    {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format(
+            "onset time of aural has passed @ %.2f, forcing update", now));
+      _tracker.update(now, _sensor);
+    }
   }
 
   protected void removeAural(IAfferentObject aural)
@@ -126,8 +130,13 @@ public class GeneralAuralProcessor implements IRealObjectListener
 
   public void objectsAdded(IObjectEvent<IRealObject, ?> addEvent)
   {
+    /*
+     * we only process audibles from outside. if DefaultAuralSensor.queue was
+     * used, the local sound will be handled automatically.
+     */
     for (IRealObject object : addEvent.getObjects())
-      if (_auralHandler.isAudible(object)) addAural(object);
+      if (_auralHandler.isAudible(object)) if (!object.getIdentifier().getOwner().equals(_sensor.getIdentifier()))
+        addAural(object);
   }
 
   /**
