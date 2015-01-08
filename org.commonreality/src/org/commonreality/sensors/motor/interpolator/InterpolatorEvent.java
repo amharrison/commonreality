@@ -6,6 +6,7 @@ package org.commonreality.sensors.motor.interpolator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.modalities.motor.MovementCommand;
+import org.commonreality.time.impl.BasicClock;
 
 public class InterpolatorEvent
 {
@@ -36,8 +37,8 @@ public class InterpolatorEvent
       double startTime, double endTime)
   {
     _command = command;
-    _startTime = startTime;
-    _endTime = endTime;
+    _startTime = BasicClock.constrainPrecision(startTime);
+    _endTime = BasicClock.constrainPrecision(endTime);
     _lastUpdateTime = _startTime;
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(command + " runs from " + _startTime + " to " + _endTime);

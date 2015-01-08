@@ -52,10 +52,14 @@ public class NetworkedSetableClock extends BasicClock implements IClock,
       @Override
       public boolean shouldWait(double currentTime)
       {
+
         double targetTime = getWaitForTime();
-        double delta = targetTime - currentTime;
-        boolean shouldWait = Double.isInfinite(currentTime)
-            || delta > getEpsilon();
+        // double delta = targetTime - currentTime;
+        // boolean shouldWait = Double.isInfinite(currentTime)
+        // || delta > getEpsilon();
+
+        double delta = getWaitForTime() - currentTime;
+        boolean shouldWait = delta >= getEpsilon();
 
         /*
          * request time change, send unshifted

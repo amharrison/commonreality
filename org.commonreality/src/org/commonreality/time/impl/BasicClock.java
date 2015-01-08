@@ -386,7 +386,7 @@ public class BasicClock implements IClock, ISetableClock
     public boolean shouldWait(double currentTime)
     {
       double delta = getWaitForTime() - currentTime;
-      boolean shouldWait = delta > getEpsilon();
+      boolean shouldWait = delta >= getEpsilon();
 
       /*
        * epsilon gap. current time is close enough to target, but still less

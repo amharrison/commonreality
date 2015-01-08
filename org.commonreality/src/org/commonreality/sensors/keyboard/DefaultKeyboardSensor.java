@@ -164,10 +164,11 @@ public class DefaultKeyboardSensor extends AbstractSensor
     checkState(State.CONNECTED);
 
     _cycle = new Runnable() {
+      private double _lastCycle = Double.NaN;
+
       public void run()
       {
         double currentTime = getClock().getTime();
-
         double nextTime = Double.NaN;
 
         try
