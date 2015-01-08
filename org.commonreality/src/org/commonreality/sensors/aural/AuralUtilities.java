@@ -14,6 +14,7 @@ import org.commonreality.object.IRealObject;
 import org.commonreality.object.manager.IRequestableRealObjectManager;
 import org.commonreality.sensors.ISensor;
 import org.commonreality.sensors.handlers.AddRemoveTracker;
+import org.commonreality.time.impl.BasicClock;
 
 /**
  * static utility class that facilitates aural event creation
@@ -55,8 +56,10 @@ public class AuralUtilities
 
     aural.setProperty(IAuralPropertyHandler.AURAL_MODALITY, Boolean.TRUE);
     aural.setProperty(IAuralPropertyHandler.IS_AUDIBLE, Boolean.TRUE);
-    aural.setProperty(IAuralPropertyHandler.ONSET, onset);
-    aural.setProperty(IAuralPropertyHandler.DURATION, duration);
+    aural.setProperty(IAuralPropertyHandler.ONSET,
+        BasicClock.constrainPrecision(onset));
+    aural.setProperty(IAuralPropertyHandler.DURATION,
+        BasicClock.constrainPrecision(duration));
     aural.setProperty(IAuralPropertyHandler.TOKEN, content);
     aural.setProperty(IAuralPropertyHandler.TYPE, types);
 

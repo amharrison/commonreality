@@ -22,6 +22,7 @@ import org.commonreality.object.ISimulationObject;
 import org.commonreality.object.delta.FullObjectDelta;
 import org.commonreality.object.delta.IObjectDelta;
 import org.commonreality.sensors.ISensor;
+import org.commonreality.time.impl.BasicClock;
 
 /**
  * utility class that tracks the time to live for {@link ISimulationObject}s,
@@ -99,6 +100,9 @@ public class AddRemoveTracker
   public void add(ISimulationObject object, double addTime, double removeTime)
   {
     Collection<ISimulationObject> collection = null;
+
+    addTime = BasicClock.constrainPrecision(addTime);
+    removeTime = BasicClock.constrainPrecision(removeTime);
 
     synchronized (_removeObjects)
     {

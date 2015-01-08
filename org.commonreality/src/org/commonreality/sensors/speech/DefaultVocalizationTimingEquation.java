@@ -22,6 +22,7 @@ import org.commonreality.modalities.vocal.VocalizationCommand;
 import org.commonreality.object.IMutableObject;
 import org.commonreality.object.delta.DeltaTracker;
 import org.commonreality.sensors.handlers.ICommandTimingEquation;
+import org.commonreality.time.impl.BasicClock;
 
  class DefaultVocalizationTimingEquation implements
     ICommandTimingEquation
@@ -56,6 +57,8 @@ import org.commonreality.sensors.handlers.ICommandTimingEquation;
       duration = text.length() / charactersPerSecond;
 
     if (duration < 0.01) duration = 0.01;
+
+    duration = BasicClock.constrainPrecision(duration);
 
     command.setProperty(IEfferentCommand.ESTIMATED_DURATION, duration);
     return duration;

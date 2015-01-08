@@ -36,6 +36,7 @@ import org.commonreality.sensors.aural.AuralUtilities;
 import org.commonreality.sensors.handlers.EfferentCommandHandler;
 import org.commonreality.sensors.handlers.ICommandHandlerDelegate;
 import org.commonreality.sensors.handlers.ICommandTimingEquation;
+import org.commonreality.time.impl.BasicClock;
 
 /**
  * Default speech generation sensor. For all connected agents, it creates an
@@ -306,7 +307,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
       }
     };
 
-    double end = onset + duration;
+    double end = BasicClock.constrainPrecision(onset + duration);
     if (_completeCommandsAt.containsKey(end))
     {
       if (LOGGER.isWarnEnabled())
