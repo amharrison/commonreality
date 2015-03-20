@@ -16,10 +16,13 @@ public class AckFutureReference implements Comparable<AckFutureReference>
 
   private Reference<AckFuture> _reference;
 
-  public AckFutureReference(long id, AckFuture future)
+  public AckFutureReference(long id, AckFuture future, boolean useWeak)
   {
     _id = id;
-    _reference = new SoftReference<AckFuture>(future);
+    if (useWeak)
+      _reference = new WeakReference<AckFuture>(future);
+    else
+      _reference = new SoftReference<AckFuture>(future);
   }
 
   public Future<IAcknowledgement> getFuture()

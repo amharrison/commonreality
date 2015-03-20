@@ -18,6 +18,12 @@ import org.commonreality.message.request.IRequest;
 import org.commonreality.participant.impl.ack.AckFuture;
 import org.commonreality.participant.impl.ack.AckFutureReference;
 
+/**
+ * replaced by
+ * {@link org.commonreality.participant.impl.ack.AcknowledgmentIoFilter}
+ * 
+ * @author harrison
+ */
 @Deprecated
 public class AcknowledgmentIoFilter extends
     org.apache.mina.core.filterchain.IoFilterAdapter
@@ -187,7 +193,8 @@ public class AcknowledgmentIoFilter extends
       List<AckFutureReference> references = getAckMap(session);
       synchronized (references)
       {
-        references.add(new AckFutureReference(request.getMessageId(), ack));
+        references
+            .add(new AckFutureReference(request.getMessageId(), ack, true));
       }
 
       if (LOGGER.isDebugEnabled())

@@ -26,7 +26,12 @@ import org.commonreality.message.request.IAcknowledgement;
  * contains session specific ack data. Many IMessages require an acknowledgment.
  * Some code may want to block until that ack is received. Once the ack is
  * received, any locks are released and the ack is moved to a memory sensitive
- * cache, allowing it to be accessed for a limited duration of time.
+ * cache, allowing it to be accessed for a limited duration of time. <br/>
+ * <br/>
+ * 3/19/15 : recent profiling showed that the expireGarbageAcks() wasn't
+ * behaving as expected. Specifically, we were holding on to acks that should
+ * have expired. Specifically, the AckFutureReference's soft reference wasn't
+ * reclaiming. Moved to weak references.
  * 
  * @author harrison
  */
@@ -36,30 +41,36 @@ public class SessionAcknowledgements
   /**
    * Logger definition
    */
-  static private final transient Log          LOGGER                   = LogFactory
-                                                                           .getLog(SessionAcknowledgements.class);
+  static private final transient Log           LOGGER                   = LogFactory
+                                                                            .getLog(SessionAcknowledgements.class);
 
-  private final IoSession                     _session;
+  private final IoSession                      _session;
 
   /**
    * map, indexed by the IMessage's id of unacknowledged Acks. Once the ack is
    * received, the AckFuture gets moved to the memory sensitive cache.
    */
-  private SortedMap<Long, AckFuture>          _pendingAcknowledgments  = Collections
-                                                                           .synchronizedSortedMap(new TreeMap<Long, AckFuture>());
+  private SortedMap<Long, AckFuture>           _pendingAcknowledgments  = Collections
+                                                                            .synchronizedSortedMap(new TreeMap<Long, AckFuture>());
 
-  private SortedMap<Long, AckFutureReference> _acknowledged            = Collections
-                                                                           .synchronizedSortedMap(new TreeMap<Long, AckFutureReference>());
+  /**
+   * this should be a capacity limited map..
+   */
 
-  private SortedSet<Long>                     _missingAcknowledgements = Collections
-                                                                           .synchronizedSortedSet(new TreeSet<Long>());
+  private SortedMap<Long, AckFutureReference>  _acknowledged            = Collections
+                                                                            .synchronizedSortedMap(new TreeMap<Long, AckFutureReference>());
 
-  private int                                 _maxMissingToRetain      = 100;
+  // .synchronizedSortedMap(new LRUMap());
 
-  private IoServiceListener                   _sessionListener;
+  private SortedSet<Long>                      _missingAcknowledgements = Collections
+                                                                            .synchronizedSortedSet(new TreeSet<Long>());
+
+  private int                                  _maxMissingToRetain      = 100;
+
+  private IoServiceListener                    _sessionListener;
 
   static public final Future<IAcknowledgement> EMPTY                    = new AckFuture(
-                                                                           -1);
+                                                                            -1);
 
   static
   {
@@ -162,10 +173,6 @@ public class SessionAcknowledgements
     }
     else
     {
-      long oldestPending = _pendingAcknowledgments.firstKey();
-      long youngestPending = _pendingAcknowledgments.lastKey();
-      long oldestAcked = _acknowledged.firstKey();
-      long youngestAcked = _acknowledged.lastKey();
 
       if (_missingAcknowledgements.contains(messageId))
         if (LOGGER.isWarnEnabled())
@@ -174,12 +181,18 @@ public class SessionAcknowledgements
               getSession(), messageId));
 
       if (LOGGER.isWarnEnabled())
+      {
+        long oldestPending = _pendingAcknowledgments.firstKey();
+        long youngestPending = _pendingAcknowledgments.lastKey();
+        long oldestAcked = _acknowledged.firstKey();
+        long youngestAcked = _acknowledged.lastKey();
         LOGGER
             .warn(String
                 .format(
                     "(%s) No record of messageId %d remains. pending[%d, %d] acknowledged[%d, %d]. Returning empty ack",
                     getSession(), messageId, oldestPending, youngestPending,
                     oldestAcked, youngestAcked));
+      }
 
       return new AckFuture(messageId, true);
     }
@@ -198,7 +211,8 @@ public class SessionAcknowledgements
     AckFuture future = _pendingAcknowledgments.remove(requestId);
     if (future != null)
     {
-      _acknowledged.put(requestId, new AckFutureReference(requestId, future));
+      _acknowledged.put(requestId, new AckFutureReference(requestId, future,
+          true));
       future.setAcknowledgement(ack);
     }
 
