@@ -21,6 +21,8 @@ import org.commonreality.identifier.IIdentifier;
 import org.commonreality.message.impl.BaseAcknowledgementMessage;
 import org.commonreality.message.request.time.IRequestTime;
 import org.commonreality.reality.IReality;
+import org.commonreality.time.IAuthoritativeClock;
+import org.commonreality.time.IClock;
 
 /**
  * @author developer
@@ -54,7 +56,10 @@ public class TimeHandler implements MessageHandler<IRequestTime>
       LOGGER.debug(id + " wants time to be " + when);
     try
     {
-      _reality.getClock().setTime(id, when);
+      IClock clock = _reality.getClock();
+      IAuthoritativeClock auth = clock.getAuthority().get();
+
+      auth.requestAndWaitForTime(when, id);
     }
     catch(IllegalArgumentException iae)
     {

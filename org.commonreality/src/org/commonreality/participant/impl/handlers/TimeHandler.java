@@ -20,7 +20,7 @@ import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.message.command.time.ITimeCommand;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.time.IClock;
-import org.commonreality.time.impl.net.INetworkedClock;
+import org.commonreality.time.impl.NetworkedClock.NetworkedAuthoritativeClock;
 
 /**
  * @author developer
@@ -44,12 +44,23 @@ public class TimeHandler implements MessageHandler<ITimeCommand>
   {
 
     IClock clock = _participant.getClock();
-    if (clock instanceof INetworkedClock)
-    {
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug("Got a time command for " + time.getTime() + " setting");
-      ((INetworkedClock) clock).setCurrentTimeCommand(time);
-    }
+    NetworkedAuthoritativeClock auth = (NetworkedAuthoritativeClock) clock
+        .getAuthority().get();
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug("Got a time command for " + time.getTime() + " setting");
+
+    /*
+     * time arrived is global.
+     */
+    auth.timeChangeReceived(time.getTime());
+
+    // if (clock instanceof INetworkedClock)
+    // {
+    // if (LOGGER.isDebugEnabled())
+    // LOGGER.debug("Got a time command for " + time.getTime() + " setting");
+    // ((INetworkedClock) clock).setCurrentTimeCommand(time);
+    // }
     
   }
 

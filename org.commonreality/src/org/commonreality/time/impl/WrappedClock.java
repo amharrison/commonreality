@@ -3,8 +3,12 @@ package org.commonreality.time.impl;
 /*
  * default logging
  */
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.commonreality.time.IAuthoritativeClock;
 import org.commonreality.time.IClock;
 
 public class WrappedClock implements IClock
@@ -15,46 +19,40 @@ public class WrappedClock implements IClock
   static private final transient Log LOGGER = LogFactory
                                                 .getLog(WrappedClock.class);
 
-  
-  final private IClock _clock;
-  private double _timeShift = 0;
-  
-  public WrappedClock(IClock clock)
+  private final IClock            _delegate;
+
+  public WrappedClock(IClock master)
   {
-    _clock = clock;
+    _delegate = master;
   }
-  
+
+  public IClock getDelegate()
+  {
+    return _delegate;
+  }
+
+  @Override
   public double getTime()
   {
-    return BasicClock.constrainPrecision(_clock.getTime() + getTimeShift());
+    return _delegate.getTime();
   }
 
-  public double getTimeShift()
+  @Override
+  public Optional<IAuthoritativeClock> getAuthority()
   {
-    return _timeShift;
+    return _delegate.getAuthority();
   }
 
-  public void setTimeShift(double shift)
+  @Override
+  public CompletableFuture<Double> waitForChange()
   {
-    _timeShift = BasicClock.constrainPrecision(shift);
+    return _delegate.waitForChange();
   }
 
-  public double waitForChange() throws InterruptedException
+  @Override
+  public CompletableFuture<Double> waitForTime(double triggerTime)
   {
-    return BasicClock.constrainPrecision(getTimeShift()
-        + _clock.waitForChange());
-  }
-
-  public double waitForTime(double time) throws InterruptedException
-  {
-    return BasicClock.constrainPrecision(getTimeShift()
-        + _clock.waitForTime(BasicClock.constrainPrecision(time
-            - getTimeShift())));
-  }
-
-  public IClock getMasterClock()
-  {
-    return _clock;
+    return _delegate.waitForTime(triggerTime);
   }
 
 }

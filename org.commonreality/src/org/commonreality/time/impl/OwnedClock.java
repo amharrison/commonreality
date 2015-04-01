@@ -1,219 +1,223 @@
-/*
- * Created on May 14, 2007 Copyright (C) 2001-2007, Anthony Harrison
- * anh23@pitt.edu (jactr.org) This library is free software; you can
- * redistribute it and/or modify it under the terms of the GNU Lesser General
- * Public License as published by the Free Software Foundation; either version
- * 2.1 of the License, or (at your option) any later version. This library is
- * distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details. You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- */
 package org.commonreality.time.impl;
 
-import java.util.ArrayList;
+/*
+ * default logging
+ */
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.commonreality.time.IOwnableClock;
+import org.commonreality.time.IAuthoritativeClock;
 
 /**
- * @author developer
+ * a clock that can have one or more owners, as determined by an owner object
+ * (usually a thread). An authority is always generated. If no owners are set,
+ * anyone can update the time.
+ * 
+ * @author harrison
  */
-public class OwnedClock<T> extends BasicClock implements IOwnableClock<T>
+public class OwnedClock extends BasicClock
 {
   /**
-   * logger definition
+   * Logger definition
    */
-  static private final Log     LOGGER          = LogFactory
-                                                   .getLog(OwnedClock.class);
+  static private final transient Log           LOGGER = LogFactory
+                                                          .getLog(OwnedClock.class);
 
-  final private Set<T>         _owners;
+  final private BiConsumer<Double, OwnedClock> _changeNotifier;
 
-  final private Map<T, Double> _requestedTimes;
-
-  final private Set<T>         _heardFrom;
-
-  private boolean              _throwException = true;
-
-  /**
-   * 
-   */
-  public OwnedClock()
+  public OwnedClock(double minimumTimeIncrement)
   {
-    _owners = new HashSet<T>();
-    _requestedTimes = new HashMap<T, Double>();
-    _heardFrom = new HashSet<T>();
+    this(minimumTimeIncrement, null);
   }
 
-  public void setInvalidAccessThrowsException(boolean throwIt)
+  public OwnedClock(double minimumTimeIncrement,
+      BiConsumer<Double, OwnedClock> universalNotifier)
   {
-    _throwException = throwIt;
+    super(true, minimumTimeIncrement);
+    _changeNotifier = universalNotifier;
   }
 
-  /**
-   * @see org.commonreality.time.IOwnableClock#addOwner(java.lang.Object)
-   */
-  public void addOwner(T owner)
+  @Override
+  protected IAuthoritativeClock createAuthoritativeClock(BasicClock clock)
   {
-    try
-    {
-      _lock.lock();
-      _owners.add(owner);
-    }
-    finally
-    {
-      _lock.unlock();
-    }
-
+    return new OwnedAuthoritativeClock(this);
   }
 
-  /**
-   * @see org.commonreality.time.IOwnableClock#getOwners()
-   */
-  public Collection<T> getOwners()
+  public static class OwnedAuthoritativeClock extends BasicAuthoritativeClock
   {
-    try
-    {
-      _lock.lock();
-      return new ArrayList<T>(_owners);
-    }
-    finally
-    {
-      _lock.unlock();
-    }
-  }
 
-  /**
-   * @see org.commonreality.time.IOwnableClock#isOwner(java.lang.Object)
-   */
-  public boolean isOwner(T owner)
-  {
-    try
+    final private Set<Object>         _ownerKeys;
+
+    final private Map<Object, Double> _requestedTimes;
+
+    final private Set<Object>         _ownersAccountedFor;
+
+    public OwnedAuthoritativeClock(BasicClock clock)
     {
-      _lock.lock();
-      boolean rtn = _owners.contains(owner);
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug(owner + " is" + (rtn ? "" : "n't") + " an owner");
+      super(clock);
+      _ownerKeys = new HashSet<Object>();
+      _requestedTimes = new HashMap<Object, Double>();
+      _ownersAccountedFor = new HashSet<Object>();
+    }
+
+    public void getOwners(final Collection<Object> owners)
+    {
+      BasicClock.runLocked(getDelegate().getLock(), () -> {
+        owners.addAll(_ownerKeys);
+      });
+    }
+
+    public void addOwner(final Object ownerKey)
+    {
+      BasicClock.runLocked(getDelegate().getLock(), () -> {
+        _ownerKeys.add(ownerKey);
+      });
+    }
+
+    public void removeOwner(final Object ownerKey)
+    {
+      BasicClock delegate = getDelegate();
+      boolean mustUpdate = BasicClock.runLocked(delegate.getLock(), () -> {
+        _ownerKeys.remove(ownerKey);
+        _requestedTimes.remove(ownerKey);
+        return _ownersAccountedFor.containsAll(_ownerKeys);
+      });
+
+      if (mustUpdate) updateTime();
+    }
+
+    @Override
+    protected boolean requestTimeChange(final double targetTime,
+        final Object key)
+    {
+      BasicClock delegate = getDelegate();
+      boolean rtn = BasicClock.runLocked(delegate.getLock(), () -> {
+        heardFrom(key, targetTime);
+        return _ownersAccountedFor.containsAll(_ownerKeys);
+      });
       return rtn;
     }
-    finally
-    {
-      _lock.unlock();
-    }
-  }
 
-  /**
-   * @see org.commonreality.time.IOwnableClock#removeOwner(java.lang.Object)
-   */
-  public void removeOwner(T owner)
-  {
-    try
+    @Override
+    public CompletableFuture<Double> requestAndWaitForTime(double targetTime,
+        final Object key)
     {
-      _lock.lock();
-      _owners.remove(owner);
-      _requestedTimes.remove(owner);
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Removed "+owner);
-      if (_heardFrom.containsAll(_owners)) updateTime();
-    }
-    finally
-    {
-      _lock.unlock();
+      targetTime = BasicClock.constrainPrecision(targetTime);
+      BasicClock bc = getDelegate();
+      CompletableFuture<Double> rtn = bc.newFuture(targetTime);
+      if (requestTimeChange(targetTime, key)) updateTime();
+      return rtn;
     }
 
-  }
-
-  private double mininumRequestedTime()
-  {
-    double rtn = Double.POSITIVE_INFINITY;
-    for (Double request : _requestedTimes.values())
-      if (request < rtn) rtn = request;
-    return rtn;
-  }
-
-  /**
-   * @param owner
-   * @param requestedTime
-   * @return the current time
-   */
-  public double setTime(T owner, double requestedTime)
-  {
-    try
+    @Override
+    public CompletableFuture<Double> requestAndWaitForChange(final Object key)
     {
-      _lock.lock();
+      BasicClock bc = getDelegate();
+      CompletableFuture<Double> rtn = bc.newFuture(Double.NaN);
+      if (requestTimeChange(Double.NaN, key)) updateTime();
+      return rtn;
+    }
 
-      if (!_owners.contains(owner))
-      {
-        if (_throwException)
-          throw new IllegalArgumentException("identifier must be a valid owner");
-        else if (LOGGER.isInfoEnabled())
-          LOGGER.info(owner + " is not a known owner : " + _owners);
-        return getTime();
-      }
+    private double mininumRequestedTime(final boolean clear)
+    {
+      return BasicClock
+          .runLocked(
+              getDelegate().getLock(),
+              () -> {
+                double rtn = Double.POSITIVE_INFINITY;
+                for (Double request : _requestedTimes.values())
+                  if (request < rtn) rtn = request;
+
+                if (LOGGER.isDebugEnabled())
+                  LOGGER.debug(String.format("Minimum time : %.4f", rtn));
+
+                /*
+                 * clear out those that this will apply to. including any
+                 * infinities (i.e. any change). Anyone waiting for a time yet
+                 * to be reached will still be considered accounted for, so it
+                 * will work reguardless of whether or not they make a
+                 * subsequent request.
+                 */
+                if (clear)
+                  for (Map.Entry<Object, Double> entry : _requestedTimes
+                      .entrySet())
+                  {
+                    double triggerTime = entry.getValue();
+                    /*
+                     * those that will wake up are considered unaccounted for.
+                     */
+                    if (triggerTime <= rtn || !Double.isFinite(triggerTime))
+                    {
+                      Object owner = entry.getKey();
+                      _ownersAccountedFor.remove(owner);
+                      // _requestedTimes.remove(owner);
+                    }
+                  }
+                return rtn;
+              });
+    }
+
+    /**
+     * actually find the smallest increment to advance, and do so, firing off
+     * completions
+     */
+    protected void updateTime()
+    {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Heard from all owners"));
+
+      double minimumTime = mininumRequestedTime(true);
+      if (Double.isInfinite(minimumTime))
+        minimumTime = BasicClock.constrainPrecision(getTime()
+            + getDelegate().getMinimumTimeIncrement());
 
       if (LOGGER.isDebugEnabled())
-        LOGGER.debug(owner + " wants time to be " + requestedTime);
+        LOGGER.debug(String.format("Updating time to %.4f", minimumTime));
 
-      if (Double.isNaN(requestedTime))
-        requestedTime = Double.POSITIVE_INFINITY;
-      else
-        requestedTime = BasicClock.constrainPrecision(requestedTime);
+      OwnedClock delegate = (OwnedClock) getDelegate();
+      // actually update and fire things off.
+      delegate.setLocalTime(minimumTime);
 
-      _requestedTimes.put(owner, requestedTime);
-      _heardFrom.add(owner);
+      if (delegate._changeNotifier != null)
+        delegate._changeNotifier.accept(minimumTime, delegate);
+    }
 
-      if (_heardFrom.containsAll(_owners))
-        return updateTime();
-      else if (LOGGER.isDebugEnabled())
+    /**
+     * in lock
+     * 
+     * @param key
+     * @param requestedTime
+     */
+    private void heardFrom(Object key, double requestedTime)
+    {
+      if (_ownerKeys.contains(key) || _ownerKeys.size() == 0)
       {
-        HashSet<T> remaining = new HashSet<T>(_owners);
-        remaining.removeAll(_heardFrom);
-        LOGGER.debug("Still waiting to hear from " + remaining);
+        if (Double.isNaN(requestedTime))
+          requestedTime = Double.POSITIVE_INFINITY;
+        else
+          requestedTime = BasicClock.constrainPrecision(requestedTime);
+
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Heard from %s, requesting %.4f", key,
+              requestedTime));
+
+        _ownersAccountedFor.add(key);
+        _requestedTimes.put(key, requestedTime);
       }
-
-      return getTime();
-    }
-    finally
-    {
-      _lock.unlock();
+      else // not a proper owner.
+      if (LOGGER.isErrorEnabled())
+        LOGGER
+            .error(String
+                .format(
+                    "Ignoring: %s tried to update clock to %.2f, but is not a known owner (%s)",
+                    key, requestedTime, _ownerKeys));
     }
   }
-
-  /**
-   * update the clock..
-   */
-  protected double updateTime()
-  {
-    double newTime = 0;
-    try
-    {
-      _lock.lock();
-      // _heardFrom.clear();
-
-      double minimum = mininumRequestedTime();
-
-      if (Double.isInfinite(minimum)) minimum = 0.05 + getTime();
-      newTime = minimum;
-
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Updating time " + minimum);
-
-      for(Map.Entry<T, Double> entry : _requestedTimes.entrySet())
-        if(entry.getValue()<=minimum)
-          _heardFrom.remove(entry.getKey());
-    }
-    finally
-    {
-      _lock.unlock();
-    }
-
-    return setTime(newTime);
-  }
-
 }

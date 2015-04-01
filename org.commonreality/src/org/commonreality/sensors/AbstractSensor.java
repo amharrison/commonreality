@@ -27,6 +27,7 @@ import org.commonreality.message.command.object.IObjectCommand;
 import org.commonreality.message.credentials.ICredentials;
 import org.commonreality.message.request.object.ObjectCommandRequest;
 import org.commonreality.message.request.object.ObjectDataRequest;
+import org.commonreality.message.request.time.RequestTime;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.object.ISensorObject;
 import org.commonreality.object.delta.FullObjectDelta;
@@ -49,7 +50,8 @@ import org.commonreality.participant.impl.RequestableAfferentObjectManager;
 import org.commonreality.participant.impl.RequestableEfferentObjectManager;
 import org.commonreality.participant.impl.RequestableRealObjectManager;
 import org.commonreality.reality.CommonReality;
-import org.commonreality.time.impl.net.NetworkedSetableClock;
+import org.commonreality.time.IClock;
+import org.commonreality.time.impl.NetworkedClock;
 
 /**
  * @author developer
@@ -96,7 +98,15 @@ public abstract class AbstractSensor extends AbstractParticipant implements
 
   public Collection<IIdentifier> getInterfacedAgents()
   {
-    return new ArrayList<IIdentifier>(_relevantAgents);
+    return getInterfacedAgents(new ArrayList<IIdentifier>(
+        _relevantAgents.size()));
+  }
+
+  public Collection<IIdentifier> getInterfacedAgents(
+      Collection<IIdentifier> container)
+  {
+    container.addAll(_relevantAgents);
+    return container;
   }
 
   /**
@@ -246,8 +256,8 @@ public abstract class AbstractSensor extends AbstractParticipant implements
      * tell CR what I am like..
      */
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Notifying CR about myself");
-    send(new ObjectDataRequest(identifier, IIdentifier.ALL, Collections
-        .singleton(new FullObjectDelta(sensor))));
+    send(new ObjectDataRequest(identifier, IIdentifier.ALL,
+        Collections.singleton(new FullObjectDelta(sensor))));
     send(new ObjectCommandRequest(identifier, IIdentifier.ALL,
         IObjectCommand.Type.ADDED, Collections.singleton(identifier)));
   }
@@ -302,7 +312,12 @@ public abstract class AbstractSensor extends AbstractParticipant implements
   public void connect() throws Exception
   {
     super.connect();
-    setClock(new NetworkedSetableClock(this));
+    IClock clock = new NetworkedClock(0.05, (requestedTime, netClock) -> {
+      // clock time is local, but network is global.
+        double timeShift = netClock.getAuthority().get().getLocalTimeShift();
+        send(new RequestTime(getIdentifier(), requestedTime - timeShift));
+    });
+    setClock(clock);
     CommonReality.addSensor(this);
   }
 

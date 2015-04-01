@@ -38,7 +38,6 @@ import org.commonreality.efferent.impl.EfferentCommandManager;
 import org.commonreality.executor.GeneralThreadFactory;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.message.IMessage;
-import org.commonreality.message.command.time.TimeCommand;
 import org.commonreality.message.credentials.ICredentials;
 import org.commonreality.message.request.IAcknowledgement;
 import org.commonreality.message.request.IRequest;
@@ -66,9 +65,8 @@ import org.commonreality.participant.IParticipant;
 import org.commonreality.participant.addressing.IAddressingInformation;
 import org.commonreality.participant.addressing.impl.BasicAddressingInformation;
 import org.commonreality.participant.impl.ack.SessionAcknowledgements;
+import org.commonreality.time.IAuthoritativeClock;
 import org.commonreality.time.IClock;
-import org.commonreality.time.ISetableClock;
-import org.commonreality.time.impl.net.INetworkedClock;
 
 /**
  * Skeleton participant that handles the majority of tasks. A participants life
@@ -512,17 +510,31 @@ public abstract class AbstractParticipant implements IParticipant
     if (clockWillBeReset)
     {
       IClock clock = getClock();
-      if (clock instanceof INetworkedClock)
-      {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("Reseting network clock");
-        ((INetworkedClock) clock)
-            .setCurrentTimeCommand(new TimeCommand(null, 0));
-      }
-      else if (clock instanceof ISetableClock)
-      {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("Reseting setable clock");
-        ((ISetableClock) clock).setTime(0);
-      }
+      IAuthoritativeClock ac = clock.getAuthority().get(); // this better be
+                                                           // here
+
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Requesting time reset"));
+
+      // no key awareness needed
+      ac.requestAndWaitForTime(0, null).handle((d, e) -> {
+        if (e != null)
+          LOGGER.error("Failed to reset clock ", e);
+        else if (LOGGER.isDebugEnabled()) LOGGER.debug("Time reset");
+        return null;
+      });
+      //
+      // if (clock instanceof INetworkedClock)
+      // {
+      // if (LOGGER.isDebugEnabled()) LOGGER.debug("Reseting network clock");
+      // ((INetworkedClock) clock)
+      // .setCurrentTimeCommand(new TimeCommand(null, 0));
+      // }
+      // else if (clock instanceof ISetableClock)
+      // {
+      // if (LOGGER.isDebugEnabled()) LOGGER.debug("Reseting setable clock");
+      // ((ISetableClock) clock).setTime(0);
+      // }
     }
 
     setState(State.INITIALIZED);

@@ -1,52 +1,51 @@
-/*
- * Created on Feb 23, 2007 Copyright (C) 2001-6, Anthony Harrison anh23@pitt.edu
- * (jactr.org) This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of the License,
- * or (at your option) any later version. This library is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
- * the GNU Lesser General Public License for more details. You should have
- * received a copy of the GNU Lesser General Public License along with this
- * library; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
- */
 package org.commonreality.time;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
 /**
- * central clock interface for controlling time.
+ * Clock interface that permits notifications of changes or time triggers.
  * 
- * @author developer
+ * @author harrison
  */
 public interface IClock
 {
 
   /**
-   * @return the current time
+   * the current time according to this clock
+   * 
+   * @return
    */
   public double getTime();
 
   /**
-   * wait for this time to be reached, returning the current time
+   * Most clock instances are strictly passive, however some clock instances
+   * need to be controlled, allowing the caller to set the time to specific
+   * values. The authoritative clock (if available) makes that possible.
    * 
-   * @param time
    * @return
-   * @throws InterruptedException
    */
-  public double waitForTime(double time) throws InterruptedException;
+  public Optional<IAuthoritativeClock> getAuthority();
 
   /**
-   * wait for any change of time
+   * Return a future representing the future change of the clock from its value
+   * at the time of calling. Callers may use this synchronously
+   * {@link CompletableFuture#get()} or with a listener e.g.
+   * {@link CompletableFuture#thenAccept(java.util.function.Consumer)}
+   * 
+   * @return
    */
-  public double waitForChange() throws InterruptedException;
-  
+  public CompletableFuture<Double> waitForChange();
+
   /**
-   * sets a constant for the clock to be adjusted by. calls to waitForTime()
-   * will be shifted back by this time and calls to getTime() will be incremented
-   * by this time
-   * @param shift
+   * Return a future representing when this clock reaches or passes the trigger
+   * time. No guarantee is made that this will be fired at the trigger time. It
+   * ultimately depends upon the underlying implementation. Callers may use this
+   * synchronously {@link CompletableFuture#get()} or with a listener e.g.
+   * {@link CompletableFuture#thenAccept(java.util.function.Consumer)}
+   * 
+   * @param triggerTime
+   * @return
    */
-  public void setTimeShift(double shift);
-  
-  public double getTimeShift();
+  public CompletableFuture<Double> waitForTime(double triggerTime);
 }

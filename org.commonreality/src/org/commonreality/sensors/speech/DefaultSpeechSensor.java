@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -134,8 +135,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
           /*
            * let's wait for the clock to update
            */
-          getClock().waitForChange();
-
+          getClock().getAuthority().get().requestAndWaitForChange(null).get();
         }
         catch (InterruptedException e)
         {
@@ -144,6 +144,10 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
            * running
            */
           Thread.interrupted(); // reset
+        }
+        catch (ExecutionException ee)
+        {
+          LOGGER.error(ee);
         }
 
         /*

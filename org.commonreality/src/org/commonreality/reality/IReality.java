@@ -20,7 +20,7 @@ import org.commonreality.message.IMessage;
 import org.commonreality.message.credentials.ICredentials;
 import org.commonreality.message.request.IAcknowledgement;
 import org.commonreality.participant.IParticipant;
-import org.commonreality.time.impl.MasterClock;
+import org.commonreality.time.IClock;
 
 /**
  * @author developer
@@ -40,7 +40,7 @@ public interface IReality extends IParticipant
   public Future<IAcknowledgement> send(Object session, IMessage message);
   
 
-  public MasterClock getClock();
+  public IClock getClock();
 
   public IIdentifier newIdentifier(IIdentifier owner, IIdentifier template);
 

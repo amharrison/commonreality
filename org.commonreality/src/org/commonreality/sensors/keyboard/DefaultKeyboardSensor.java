@@ -4,6 +4,7 @@ package org.commonreality.sensors.keyboard;
  * default logging
  */
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,6 +23,7 @@ import org.commonreality.sensors.motor.interpolator.BasicInterpolator;
 import org.commonreality.sensors.motor.interpolator.IActuatorCompletion;
 import org.commonreality.sensors.motor.interpolator.IInterpolator;
 import org.commonreality.sensors.motor.interpolator.InterpolatorActuator;
+import org.commonreality.time.IAuthoritativeClock;
 
 /**
  * generic keyboard & mouse handler.
@@ -193,11 +195,12 @@ public class DefaultKeyboardSensor extends AbstractSensor
            */
           if (!(_shouldStop || _shouldSuspend))
           {
+            IAuthoritativeClock auth = getClock().getAuthority().get();
             if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting");
             if (Double.isNaN(nextTime) || nextTime <= currentTime)
-              getClock().waitForChange();
+              auth.requestAndWaitForChange(null).get();
             else
-              getClock().waitForTime(nextTime);
+              auth.requestAndWaitForTime(nextTime, null).get();
             if (LOGGER.isDebugEnabled()) LOGGER.debug("Resuming");
           }
         }
@@ -205,6 +208,10 @@ public class DefaultKeyboardSensor extends AbstractSensor
         {
           // perfectly legit, clear the flag
           Thread.interrupted();
+        }
+        catch (ExecutionException ee)
+        {
+          LOGGER.error(ee);
         }
         finally
         {

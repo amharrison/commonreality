@@ -30,6 +30,7 @@ import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.identifier.impl.BasicIdentifier;
 import org.commonreality.message.IMessage;
+import org.commonreality.message.command.time.TimeCommand;
 import org.commonreality.message.credentials.ICredentials;
 import org.commonreality.message.request.IAcknowledgement;
 import org.commonreality.message.request.IRequest;
@@ -40,8 +41,8 @@ import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.participant.impl.ack.SessionAcknowledgements;
 import org.commonreality.reality.CommonReality;
 import org.commonreality.reality.IReality;
-import org.commonreality.time.impl.MasterClock;
-import org.commonreality.time.impl.net.NetworkedMasterClock;
+import org.commonreality.time.IClock;
+import org.commonreality.time.impl.OwnedClock;
 
 /**
  * @author developer
@@ -62,7 +63,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
   static private final Log   LOGGER                      = LogFactory
                                                              .getLog(DefaultReality.class);
 
-  private MasterClock        _masterClock;
+  private OwnedClock         _masterClock;
 
   private long               _timeout                    = 10000;
 
@@ -77,9 +78,16 @@ public class DefaultReality extends AbstractParticipant implements IReality
     // null));
     // setCommonRealityIdentifier(getIdentifier());
 
-    _masterClock = new NetworkedMasterClock(this);
-    // silence the clock
-    _masterClock.setInvalidAccessThrowsException(false);
+    // _masterClock = new NetworkedMasterClock(this);
+    // // silence the clock
+    // _masterClock.setInvalidAccessThrowsException(false);
+    //
+    _masterClock = new OwnedClock(0.05, (newTime, ownedClock) -> {
+      // send the time update whenever the clock is updated
+        double timeShift = ownedClock.getAuthority().get().getLocalTimeShift();
+        send(new TimeCommand(getIdentifier(), newTime - timeShift));
+      });
+
 
     CommonReality.setReality(this);
   }
@@ -95,6 +103,10 @@ public class DefaultReality extends AbstractParticipant implements IReality
     _centralExecutor = Executors
         .newSingleThreadExecutor(getCentralThreadFactory());
 
+    // int min = Math.min(2, Runtime.getRuntime().availableProcessors());
+    // int max = Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
+    // return new OrderedThreadPoolExecutor(min, max, 5000,
+    // TimeUnit.MILLISECONDS, getIOThreadFactory());
     return new OrderedThreadPoolExecutor(1, Integer.MAX_VALUE, 5000,
         TimeUnit.MILLISECONDS, getIOThreadFactory());
     // return Executors.newCachedThreadPool(getIOThreadFactory());
@@ -136,7 +148,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
   }
 
   @Override
-  public MasterClock getClock()
+  public IClock getClock()
   {
     return _masterClock;
   }

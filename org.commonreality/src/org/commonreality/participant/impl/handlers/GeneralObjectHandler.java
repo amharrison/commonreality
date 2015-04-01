@@ -260,7 +260,7 @@ public class GeneralObjectHandler
       else if (dataList.size() != 0)
         LOGGER.error(dataList.size()
             + " Unprocessed object deltas were still available at removal of "
-            + id);
+            + id + ". Safe to ignore if isolated or at the end of a run.");
 
       if (_outOfOrderAdd.remove(id))
         LOGGER.error("Never did receive any data for the out of order add of "

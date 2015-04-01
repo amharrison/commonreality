@@ -45,6 +45,8 @@ import org.commonreality.participant.IParticipant.State;
 import org.commonreality.participant.addressing.IAddressingInformation;
 import org.commonreality.reality.IReality;
 import org.commonreality.reality.impl.handler.ObjectCommandHandler;
+import org.commonreality.time.IClock;
+import org.commonreality.time.impl.OwnedClock.OwnedAuthoritativeClock;
 
 /**
  * state and connection manager does just that but is centralized so that we can
@@ -773,7 +775,13 @@ public class StateAndConnectionManager
       _lock.writeLock().unlock();
     }
 
-    if (isClockOwner) _reality.getClock().addOwner(identifier);
+    if (isClockOwner)
+    {
+      IClock clock = _reality.getClock();
+      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+          .getAuthority().get();
+      auth.addOwner(identifier);
+    }
 
     final Future<IAcknowledgement> finalInitAck = initAck;
 
@@ -926,7 +934,13 @@ public class StateAndConnectionManager
      */
     clearObjectInformation(identifier);
 
-    if (clockWasOwner) _reality.getClock().removeOwner(identifier);
+    if (clockWasOwner)
+    {
+      IClock clock = _reality.getClock();
+      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+          .getAuthority().get();
+      auth.removeOwner(identifier);
+    }
 
     if (credentials.equals(_clockOwnerCredentials))
       if (!_reality.stateMatches(IParticipant.State.STOPPED)

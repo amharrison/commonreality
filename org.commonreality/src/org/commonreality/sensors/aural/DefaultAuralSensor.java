@@ -4,6 +4,7 @@ package org.commonreality.sensors.aural;
  * default logging
  */
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +17,7 @@ import org.commonreality.object.IAfferentObject;
 import org.commonreality.object.IRealObject;
 import org.commonreality.sensors.AbstractSensor;
 import org.commonreality.sensors.aural.GeneralAuralProcessor.IAuralMutator;
+import org.commonreality.time.IAuthoritativeClock;
 
 /**
  * quick and easy way to get sounds out to the system is to extend this sensor
@@ -77,10 +79,13 @@ public class DefaultAuralSensor extends AbstractSensor
           /*
            * let's wait for the clock to update
            */
-          if (Double.isNaN(nextTime))
-            getClock().waitForChange();
+          IAuthoritativeClock auth = getClock().getAuthority().get();
+          if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting");
+          if (Double.isNaN(nextTime) || nextTime <= currentTime)
+            auth.requestAndWaitForChange(null).get();
           else
-            getClock().waitForTime(nextTime);
+            auth.requestAndWaitForTime(nextTime, null).get();
+          if (LOGGER.isDebugEnabled()) LOGGER.debug("Resuming");
 
         }
         catch (InterruptedException e)
@@ -90,6 +95,10 @@ public class DefaultAuralSensor extends AbstractSensor
            * running
            */
           Thread.interrupted(); // reset
+        }
+        catch (ExecutionException ee)
+        {
+          LOGGER.error(ee);
         }
 
         /*

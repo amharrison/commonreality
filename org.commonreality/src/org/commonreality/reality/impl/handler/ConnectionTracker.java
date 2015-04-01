@@ -28,15 +28,14 @@ import org.commonreality.message.credentials.ICredentials;
 import org.commonreality.participant.addressing.IAddressingInformation;
 import org.commonreality.reality.IReality;
 import org.commonreality.reality.impl.StateAndConnectionManager;
-import org.commonreality.time.impl.MasterClock;
+import org.commonreality.time.IClock;
+import org.commonreality.time.impl.OwnedClock.OwnedAuthoritativeClock;
 
 /**
  * class that tracks which connection credentials we will accept as well as
  * assigns, links and accesses IParticipantIdentifiers and
- * IAddressingInformation
- * </br>
- * </br>
- * This is now deprecated in favor of {@link StateAndConnectionManager}
+ * IAddressingInformation </br> </br> This is now deprecated in favor of
+ * {@link StateAndConnectionManager}
  * 
  * @author developer
  */
@@ -129,21 +128,42 @@ public class ConnectionTracker
       _acceptedConnections.put(credentials, null);
 
     if (_clockOwnerCredentials == null)
-      _reality.getClock().removeOwner(identifier);
+    {
+      IClock clock = _reality.getClock();
+      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+          .getAuthority().get();
+      auth.removeOwner(identifier);
+
+      // _reality.getClock().removeOwner(identifier);
+    }
     else if (_clockOwnerCredentials.equals(credentials))
     {
-      MasterClock clock = _reality.getClock();
-      clock.removeOwner(identifier);
+      LOGGER.warn("Clock owner has dropped out of simulation");
+      IClock clock = _reality.getClock();
+      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+          .getAuthority().get();
+      auth.removeOwner(identifier);
+
+      // MasterClock clock = _reality.getClock();
+      // clock.removeOwner(identifier);
       _clockOwnerCredentials = null;
       /*
        * here's a sticky situation, if there are still participants, they are
        * now without a clock owner.. so, we add everyone and then force the
        * clock.
        */
-      for (IIdentifier id : _sessionMap.keySet())
-        clock.addOwner(id);
+      if (_sessionMap.isEmpty())
+        auth.requestAndWaitForTime(clock.getTime(), null);
+      else
+      {
+        for (IIdentifier id : _sessionMap.keySet())
+          // clock.addOwner(id);
+          auth.addOwner(id);
 
-      clock.setTime(clock.getTime());
+        // clock.setTime(clock.getTime());
+        for (IIdentifier id : _sessionMap.keySet())
+          auth.requestAndWaitForTime(clock.getTime(), auth);
+      }
     }
 
     return identifier;
@@ -154,35 +174,43 @@ public class ConnectionTracker
   {
 
   }
-  
-  synchronized public void rejectConnection(IIdentifier identifier, ICredentials credentials)
+
+  synchronized public void rejectConnection(IIdentifier identifier,
+      ICredentials credentials)
   {
     _pendingAddressInfo.remove(identifier);
     _pendingConnections.remove(credentials);
     _pendingSessionMap.remove(identifier);
   }
 
-  synchronized public void authorizeConnection(IIdentifier identifier, ICredentials credentials)
+  synchronized public void authorizeConnection(IIdentifier identifier,
+      ICredentials credentials)
   {
     _addressInfo.put(identifier, _pendingAddressInfo.remove(identifier));
-    _acceptedConnections.put(credentials, _pendingConnections.remove(identifier));
+    _acceptedConnections.put(credentials,
+        _pendingConnections.remove(identifier));
     _sessionMap.put(identifier, _pendingSessionMap.remove(identifier));
-    
+
     /**
-     * if there is no clock owner specified, everyone shares in the
-     * ownership. if there is a clock owner, it is set.
+     * if there is no clock owner specified, everyone shares in the ownership.
+     * if there is a clock owner, it is set.
      */
     if (_clockOwnerCredentials == null
         || _clockOwnerCredentials.equals(credentials))
-      _reality.getClock().addOwner(identifier);
+    {
+      IClock clock = _reality.getClock();
+      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+          .getAuthority().get();
+      auth.addOwner(identifier);
+    }
   }
 
   /**
    * check to see if the connection should be accepted based on the credentials.
    * If it is to be accepted, the connection will be accepted provisionally and
    * an {@link IIdentifier} will be assigned to the participant. The connection
-   * is not officially connected, however, until {@link #authorizeConnection(IIdentifier, ICredentials)}
-   * is called.
+   * is not officially connected, however, until
+   * {@link #authorizeConnection(IIdentifier, ICredentials)} is called.
    * 
    * @param credentials
    * @param session
@@ -207,8 +235,8 @@ public class ConnectionTracker
 
         validateAddressing(session, addressInfo);
 
-        IIdentifier identifier = _reality.newIdentifier(_reality
-            .getIdentifier(), template);
+        IIdentifier identifier = _reality.newIdentifier(
+            _reality.getIdentifier(), template);
 
         session.setAttribute(CREDENTIALS, credentials);
         session.setAttribute(IDENTIFIER, identifier);

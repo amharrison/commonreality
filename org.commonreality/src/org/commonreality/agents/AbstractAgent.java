@@ -26,6 +26,7 @@ import org.commonreality.message.command.object.IObjectCommand;
 import org.commonreality.message.credentials.ICredentials;
 import org.commonreality.message.request.object.ObjectCommandRequest;
 import org.commonreality.message.request.object.ObjectDataRequest;
+import org.commonreality.message.request.time.RequestTime;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.object.ISensorObject;
 import org.commonreality.object.delta.FullObjectDelta;
@@ -39,7 +40,8 @@ import org.commonreality.participant.addressing.IAddressingInformation;
 import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.participant.impl.RequestableEfferentCommandManager;
 import org.commonreality.reality.CommonReality;
-import org.commonreality.time.impl.net.NetworkedSetableClock;
+import org.commonreality.time.IClock;
+import org.commonreality.time.impl.NetworkedClock;
 
 /**
  * @author developer
@@ -55,8 +57,6 @@ public abstract class AbstractAgent extends AbstractParticipant implements
 
   private ICredentials     _credentials;
 
-  
-  
   /**
    * @param type
    */
@@ -64,9 +64,6 @@ public abstract class AbstractAgent extends AbstractParticipant implements
   {
     super(IIdentifier.Type.AGENT);
   }
-  
-  
-  
 
   /**
    * @see org.commonreality.participant.impl.AbstractParticipant#getCredentials()
@@ -106,46 +103,45 @@ public abstract class AbstractAgent extends AbstractParticipant implements
   {
     return new AgentObject(identifier);
   }
-  
+
   /**
-   * overriden to provide a {@link RequestableEfferentCommandManager} so
-   * that agents can create new {@link IEfferentCommand}s on the fly.
+   * overriden to provide a {@link RequestableEfferentCommandManager} so that
+   * agents can create new {@link IEfferentCommand}s on the fly.
    */
   @Override
   protected IEfferentCommandManager createEfferentCommandManager()
   {
     return new RequestableEfferentCommandManager(this);
   }
-  
-  
+
   @Override
   protected ISensorObjectManager createSensorObjectManager()
   {
     ISensorObjectManager som = new SensorObjectManager();
     ISensorListener sensorListener = new ISensorListener() {
 
-      public void objectsAdded(IObjectEvent<ISensorObject, ? > addEvent)
+      public void objectsAdded(IObjectEvent<ISensorObject, ?> addEvent)
       {
         for (ISensorObject sensor : addEvent.getObjects())
-           sensorAdded(sensor);
+          sensorAdded(sensor);
       }
 
-      public void objectsRemoved(IObjectEvent<ISensorObject, ? > removeEvent)
+      public void objectsRemoved(IObjectEvent<ISensorObject, ?> removeEvent)
       {
         /*
          * clean up
          */
         for (ISensorObject sensor : removeEvent.getObjects())
         {
-          IIdentifier agentId = sensor.getIdentifier();
-            sensorRemoved(sensor);
+          sensor.getIdentifier();
+          sensorRemoved(sensor);
         }
       }
 
-      public void objectsUpdated(IObjectEvent<ISensorObject, ? > updateEvent)
+      public void objectsUpdated(IObjectEvent<ISensorObject, ?> updateEvent)
       {
         for (ISensorObject sensor : updateEvent.getObjects())
-            sensorUpdated(sensor);
+          sensorUpdated(sensor);
       }
 
     };
@@ -154,10 +150,11 @@ public abstract class AbstractAgent extends AbstractParticipant implements
 
     return som;
   }
-  
+
   /**
-   * callback in response to a sensor change. This is called
-   * on the main IO thread, so there should be no blocking calls
+   * callback in response to a sensor change. This is called on the main IO
+   * thread, so there should be no blocking calls
+   * 
    * @param sensor
    */
   protected void sensorAdded(ISensorObject sensor)
@@ -165,47 +162,47 @@ public abstract class AbstractAgent extends AbstractParticipant implements
     /*
      * prefetch some IEfferentCommands
      */
-    ((RequestableEfferentCommandManager)getEfferentCommandManager()).prefetch(sensor.getIdentifier());
+    ((RequestableEfferentCommandManager) getEfferentCommandManager())
+        .prefetch(sensor.getIdentifier());
   }
-  
+
   /**
-   * callback in response to a sensor change. This is called
-   * on the main IO thread, so there should be no blocking calls
+   * callback in response to a sensor change. This is called on the main IO
+   * thread, so there should be no blocking calls
+   * 
    * @param sensor
    */
   protected void sensorRemoved(ISensorObject sensor)
   {
     IIdentifier sId = sensor.getIdentifier();
-    
+
     /*
-     * find all the efferent commands that havent been removed
-     * and remove them..
+     * find all the efferent commands that havent been removed and remove them..
      */
     ArrayList<IIdentifier> toRemove = new ArrayList<IIdentifier>(1);
-    for(IIdentifier identifier : getEfferentCommandManager().getIdentifiers())
+    for (IIdentifier identifier : getEfferentCommandManager().getIdentifiers())
     {
-      IIdentifier sensorId = ((ISensoryIdentifier)identifier).getSensor();
-      if(sensorId.equals(sId))
-        toRemove.add(identifier);
+      IIdentifier sensorId = ((ISensoryIdentifier) identifier).getSensor();
+      if (sensorId.equals(sId)) toRemove.add(identifier);
     }
-    
+
     /*
      * and remove..
      */
-    ((RequestableEfferentCommandManager)getEfferentCommandManager()).remove(toRemove);
+    ((RequestableEfferentCommandManager) getEfferentCommandManager())
+        .remove(toRemove);
   }
-  
+
   /**
-   * callback in response to a sensor change. This is called
-   * on the main IO thread, so there should be no blocking calls
+   * callback in response to a sensor change. This is called on the main IO
+   * thread, so there should be no blocking calls
+   * 
    * @param sensor
    */
   protected void sensorUpdated(ISensorObject sensor)
   {
-    
+
   }
-  
-  
 
   @Override
   public void setIdentifier(IIdentifier identifier)
@@ -220,12 +217,13 @@ public abstract class AbstractAgent extends AbstractParticipant implements
      * tell everyone what I am like..
      */
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Notifying CR about myself");
-    send(new ObjectDataRequest(identifier, IIdentifier.ALL, Collections
-        .singleton(new FullObjectDelta(agent))));
-    send(new ObjectCommandRequest(identifier, IIdentifier.ALL, IObjectCommand.Type.ADDED,
-        Collections.singleton(identifier)));
+    send(new ObjectDataRequest(identifier, IIdentifier.ALL,
+        Collections.singleton(new FullObjectDelta(agent))));
+    send(new ObjectCommandRequest(identifier, IIdentifier.ALL,
+        IObjectCommand.Type.ADDED, Collections.singleton(identifier)));
   }
-  
+
+  @Override
   public void shutdown() throws Exception
   {
     /*
@@ -240,7 +238,12 @@ public abstract class AbstractAgent extends AbstractParticipant implements
   public void connect() throws Exception
   {
     super.connect();
-    setClock(new NetworkedSetableClock(this));
+    IClock clock = new NetworkedClock(0.05, (requestedTime, netClock) -> {
+      // clock time is local, but network is global.
+      double timeShift = netClock.getAuthority().get().getLocalTimeShift();
+      send(new RequestTime(getIdentifier(), requestedTime - timeShift));
+    });
+    setClock(clock);
     CommonReality.addAgent(this);
   }
 
@@ -251,7 +254,5 @@ public abstract class AbstractAgent extends AbstractParticipant implements
     setClock(null);
     super.disconnect();
   }
-  
-  
 
 }
