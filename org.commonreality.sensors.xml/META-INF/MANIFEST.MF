@@ -4,11 +4,12 @@ Bundle-Name: XML Sensor
 Bundle-SymbolicName: org.commonreality.sensors.xml;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: jactr.org
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.commonreality;bundle-version="1.2.0",
  org.jactr.support;bundle-version="1.2.0",
  org.jactr;bundle-version="1.2.0";resolution:=optional
 Export-Package: org.commonreality.sensors.xml,
- org.commonreality.sensors.xml.actions
+ org.commonreality.sensors.xml.actions,
+ org.commonreality.sensors.xml2
 Eclipse-BuddyPolicy: registered
 Eclipse-RegisterBuddy: org.jactr, org.jactr.io, org.commonreality, org.apache.log4j, org.apache.commons.logging

@@ -12,6 +12,15 @@
             </description>
          </property>
       </sensor>
+       <sensor name="XMLSensor2" class="org.commonreality.sensors.xml2.XMLSensor">
+         <description>General sensor that sends sensor data read from an XML file</description>
+         <property
+               name="XMLSensor.DataURI"
+               value="">
+            <description>URL or classloader resource that contains the xml formatted data to send
+            </description>
+         </property>
+      </sensor>
    </extension>
 
 </plugin>

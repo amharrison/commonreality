@@ -13,6 +13,8 @@
  */
 package org.commonreality.sensors.xml.tasks;
 
+import java.util.concurrent.ExecutionException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.sensors.xml.XMLSensor;
@@ -53,13 +55,18 @@ public class NoOp implements Runnable
       
       if (LOGGER.isDebugEnabled()) LOGGER.debug("waiting for time change");
       
-      _sensor.getClock().waitForChange();
+      _sensor.getClock().getAuthority().get().requestAndWaitForChange(null)
+          .get();
 
       _sensor.queueNextFrame();
     }
     catch (InterruptedException e)
     {
       LOGGER.debug("interrupted ", e);
+    }
+    catch (ExecutionException ee)
+    {
+      LOGGER.error("Execution exception ", ee);
     }
     finally
     {

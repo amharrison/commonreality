@@ -16,6 +16,7 @@ package org.commonreality.sensors.xml.tasks;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -98,7 +99,10 @@ public class ProcessTimeFrame implements Runnable
 
       if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting for time=" + forTime);
 
-      forTime = clock.waitForTime(forTime);
+      // with the new clock framework we can make this request and then resume
+      // processing.
+      forTime = clock.getAuthority().get().requestAndWaitForTime(forTime, null)
+          .get();
 
       if (LOGGER.isDebugEnabled())
         LOGGER.debug(hashCode() + " Sending XML Data @ " + forTime);
@@ -116,6 +120,10 @@ public class ProcessTimeFrame implements Runnable
     catch (InterruptedException e)
     {
       
+    }
+    catch (ExecutionException ee)
+    {
+      LOGGER.error(ee);
     }
     finally
     {

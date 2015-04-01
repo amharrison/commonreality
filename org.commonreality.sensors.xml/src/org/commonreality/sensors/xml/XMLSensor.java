@@ -263,6 +263,9 @@ public class XMLSensor extends AbstractSensor
 
   protected void load(String dataURI)
   {
+    dataURI = dataURI.trim();
+    if (dataURI.length() == 0) return;
+
     URL url = getClass().getClassLoader().getResource(dataURI);
     try
     {

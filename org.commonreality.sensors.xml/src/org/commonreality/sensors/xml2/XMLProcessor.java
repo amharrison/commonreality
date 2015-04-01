@@ -11,7 +11,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-package org.commonreality.sensors.xml;
+package org.commonreality.sensors.xml2;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,8 +29,8 @@ import org.commonreality.object.IEfferentObject;
 import org.commonreality.object.manager.IRequestableObjectManager;
 import org.commonreality.object.manager.event.IAfferentListener;
 import org.commonreality.object.manager.event.IEfferentListener;
-import org.commonreality.sensors.xml.processor.AbstractProcessor;
-import org.commonreality.sensors.xml.processor.IXMLProcessor;
+import org.commonreality.sensors.xml2.processor.AbstractProcessor;
+import org.commonreality.sensors.xml2.processor.IXMLProcessor;
 import org.w3c.dom.Element;
 
 /**
@@ -112,8 +112,7 @@ public class XMLProcessor
     else if (frame.hasAttribute("relative"))
       nextTime = _sensor.getClock().getTime()
           + Double.valueOf(frame.getAttribute("relative"));
-    else
-      nextTime = Double.NaN;
+    else if (frame.hasAttribute("immediate")) nextTime = Double.NaN;
 
     return nextTime;
   }
@@ -160,8 +159,8 @@ public class XMLProcessor
       // + message.getMessageId() + "." + message.getClass().getSimpleName()
       // + ") is less than previous ("+lastId+"."+lastType+")");
       _sensor.send(message);
-      // lastId = message.getMessageId();
-      // lastType = message.getClass().getSimpleName();
+    // lastId = message.getMessageId();
+    // lastType = message.getClass().getSimpleName();
 
     if (data instanceof FastList) FastList.recycle((FastList) data);
   }
