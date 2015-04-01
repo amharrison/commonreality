@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -39,7 +40,7 @@ import org.commonreality.object.delta.FullObjectDelta;
 import org.commonreality.object.delta.IObjectDelta;
 import org.commonreality.object.identifier.ISensoryIdentifier;
 import org.commonreality.sensors.AbstractSensor;
-import org.commonreality.time.impl.RealTimeClock;
+import org.commonreality.time.impl.RealtimeClock;
 
 /**
  * skeletal sensor that utilizes a {@link PerceptManager} to create and process
@@ -85,7 +86,7 @@ public abstract class BaseSensor extends AbstractSensor
   /**
    * only used is isRealtimeClockEnabled()
    */
-  private RealTimeClock                                   _realtimeClock;
+  private RealtimeClock                                   _realtimeClock;
 
   private boolean                                         _useRealtimeClock = false;
 
@@ -219,7 +220,7 @@ public abstract class BaseSensor extends AbstractSensor
   {
     try
     {
-      _realtimeClock = new RealTimeClock();
+      _realtimeClock = new RealtimeClock(Executors.newScheduledThreadPool(1));
       super.start();
       if (LOGGER.isDebugEnabled()) LOGGER.debug("Executing committer");
       execute(_committer);
@@ -463,12 +464,16 @@ public abstract class BaseSensor extends AbstractSensor
 
       try
       {
-        postClockWait(getClock().waitForChange());
+        postClockWait(getClock().waitForChange().get());
       }
       catch (InterruptedException e)
       {
         LOGGER.error(
             "Committer.runImmediateMode threw InterruptedException : ", e);
+      }
+      catch (ExecutionException ee)
+      {
+        LOGGER.error(ee);
       }
     }
 
@@ -500,7 +505,7 @@ public abstract class BaseSensor extends AbstractSensor
 
         preClockWait(waitUntil);
 
-        postClockWait(getClock().waitForTime(waitUntil));
+        postClockWait(getClock().waitForTime(waitUntil).get());
 
         /*
          * and repeat
@@ -512,7 +517,8 @@ public abstract class BaseSensor extends AbstractSensor
 
         if (isRealtimeClockEnabled())
         {
-          waitUntil = _realtimeClock.waitForTime(rtEndTime + getTimeStep());
+          waitUntil = _realtimeClock.waitForTime(rtEndTime + getTimeStep())
+              .get();
           if (LOGGER.isDebugEnabled())
             LOGGER.debug(String.format(
                 "Processing ended @ %.2f, took %.2f, waited until %.2f",
