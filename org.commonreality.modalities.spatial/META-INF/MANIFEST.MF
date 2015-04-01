@@ -8,4 +8,4 @@ Require-Bundle: org.commonreality,
  org.jactr.support
 Export-Package: org.commonreality.modalities.spatial
 Bundle-ClassPath: spatial.jar
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
