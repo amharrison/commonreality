@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -72,7 +71,7 @@ public class XMLSensor extends AbstractSensor
 
     _nextTimeGuess = 0;
     _processor = new XMLProcessor(this);
-    _executor = Executors.newSingleThreadExecutor(getCentralThreadFactory());
+    _executor = getPeriodicExecutor();
 
     requestTimeUpdate(0);
   }
@@ -87,7 +86,8 @@ public class XMLSensor extends AbstractSensor
     }
     finally
     {
-      if (_executor != null) _executor.shutdownNow();
+      if (_executor != null && _executor != getPeriodicExecutor())
+        _executor.shutdown();
       _executor = null;
       super.shutdown();
     }
