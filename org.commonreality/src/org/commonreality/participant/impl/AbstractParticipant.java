@@ -76,7 +76,10 @@ import org.commonreality.time.IClock;
  * afetr initializing, start will be signaled. suspend and resume may be called
  * while running The simulation will run for some amount of time, until stop
  * will be called. then either reset or shutdown may be called. shutdown should
- * then disconnect.
+ * then disconnect. <br/>
+ * Exposes system property "participant.ioMaxThreads" (default 1) to permit
+ * tuning of threading behavior. Plus "participant.useSharedThreads" (default
+ * false)
  * 
  * @author developer
  */
@@ -85,10 +88,12 @@ public abstract class AbstractParticipant implements IParticipant
   /**
    * logger definition
    */
-  static private final Log                LOGGER = LogFactory
-                                                     .getLog(AbstractParticipant.class);
+  static private final Log                 LOGGER = LogFactory
+                                                      .getLog(AbstractParticipant.class);
 
-  static private ScheduledExecutorService _periodicExecutor;
+  static private ScheduledExecutorService  _periodicExecutor;
+
+  static private OrderedThreadPoolExecutor _sharedIOExecutor;
 
   /**
    * return a shared periodic executor that can be useful in many circumstances
@@ -100,10 +105,28 @@ public abstract class AbstractParticipant implements IParticipant
   {
     synchronized (AbstractParticipant.class)
     {
-      if (_periodicExecutor == null)
+      if (_periodicExecutor == null || _periodicExecutor.isShutdown()
+          || _periodicExecutor.isTerminated())
         _periodicExecutor = Executors.newScheduledThreadPool(1,
             new GeneralThreadFactory("IParticipant-Periodic"));
       return _periodicExecutor;
+    }
+  }
+
+  static public OrderedThreadPoolExecutor getSharedIOExecutor()
+  {
+    synchronized (AbstractParticipant.class)
+    {
+      if (_sharedIOExecutor == null || _sharedIOExecutor.isShutdown()
+          || _sharedIOExecutor.isTerminated())
+      {
+        int max = Integer.parseInt(System.getProperty(
+            "participant.ioMaxThreads", "1"));
+        _sharedIOExecutor = new OrderedThreadPoolExecutor(1, max, 10000,
+            TimeUnit.MILLISECONDS, new GeneralThreadFactory(
+                "Shared-IOProcessor"));
+      }
+      return _sharedIOExecutor;
     }
   }
 
@@ -251,12 +274,17 @@ public abstract class AbstractParticipant implements IParticipant
    */
   protected ExecutorService createIOExecutorService()
   {
-    return new OrderedThreadPoolExecutor(1, 1, 5000, TimeUnit.MILLISECONDS,
+    if (Boolean.getBoolean("participant.useSharedThreads"))
+      return getSharedIOExecutor();
+
+    int max = Integer.parseInt(System.getProperty("participant.ioMaxThreads",
+        "1"));
+    return new OrderedThreadPoolExecutor(1, max, 10000, TimeUnit.MILLISECONDS,
         getIOThreadFactory());
     // return Executors.newSingleThreadExecutor(getIOThreadFactory());
   }
 
-  final protected Executor getIOExecutor()
+  final public Executor getIOExecutor()
   {
     return _ioExecutor;
   }
@@ -560,14 +588,19 @@ public abstract class AbstractParticipant implements IParticipant
     /*
      * and kill the executor
      */
-    ExecutorService ex = (ExecutorService) getIOExecutor();
-    if (!ex.isShutdown()) ex.shutdown();
+    if (_ioExecutor != null && _ioExecutor != _sharedIOExecutor
+        && !_ioExecutor.isShutdown())
+    {
+      _ioExecutor.shutdown();
+      _ioExecutor = null;
 
-    /**
-     * release the thread groups
-     */
-    getIOThreadFactory().dispose();
-    getCentralThreadFactory().dispose();
+      /**
+       * release the thread groups
+       */
+      getIOThreadFactory().dispose();
+      getCentralThreadFactory().dispose();
+    }
+
   }
 
   /**

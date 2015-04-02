@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -47,6 +46,12 @@ import org.commonreality.time.impl.OwnedClock;
 /**
  * @author developer
  */
+/*
+ * No longer Exposes system property "defaultReality.ioMaxThreads" (default max)
+ * to permit tuning of threading behavior. Also exposes
+ * "defaultReality.useSharedThreads" to use the shared io thread common to all
+ * participants.
+ */
 public class DefaultReality extends AbstractParticipant implements IReality
 {
 
@@ -67,7 +72,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
 
   private long               _timeout                    = 10000;
 
-  private ExecutorService    _centralExecutor;
+  // private ExecutorService _centralExecutor;
 
   private boolean            _disconnectAllOnMissedState = false;
 
@@ -88,7 +93,6 @@ public class DefaultReality extends AbstractParticipant implements IReality
         send(new TimeCommand(getIdentifier(), newTime - timeShift));
       });
 
-
     CommonReality.setReality(this);
   }
 
@@ -100,15 +104,24 @@ public class DefaultReality extends AbstractParticipant implements IReality
   @Override
   protected ExecutorService createIOExecutorService()
   {
-    _centralExecutor = Executors
-        .newSingleThreadExecutor(getCentralThreadFactory());
+    // _centralExecutor = Executors
+    // .newSingleThreadExecutor(getCentralThreadFactory());
 
     // int min = Math.min(2, Runtime.getRuntime().availableProcessors());
     // int max = Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
     // return new OrderedThreadPoolExecutor(min, max, 5000,
     // TimeUnit.MILLISECONDS, getIOThreadFactory());
-    return new OrderedThreadPoolExecutor(1, Integer.MAX_VALUE, 5000,
-        TimeUnit.MILLISECONDS, getIOThreadFactory());
+
+    // having this possible is bad as long as there is a blocking call
+    // (StateAndCoonectionManager)
+    //
+    if (Boolean.getBoolean("defaultReality.useSharedThreads"))
+      return getSharedIOExecutor();
+
+    int max = Integer.parseInt(System.getProperty(
+        "defaultReality.ioMaxThreads", Integer.toString(Integer.MAX_VALUE)));
+    return new OrderedThreadPoolExecutor(1, max, 10000, TimeUnit.MILLISECONDS,
+        getIOThreadFactory());
     // return Executors.newCachedThreadPool(getIOThreadFactory());
   }
 
@@ -128,7 +141,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
 
   public Executor getCentralExector()
   {
-    return _centralExecutor;
+    return getPeriodicExecutor();
   }
 
   public long getTimeout()
@@ -224,11 +237,11 @@ public class DefaultReality extends AbstractParticipant implements IReality
    */
   public void cleanUp()
   {
-    if (_centralExecutor != null)
-    {
-      _centralExecutor.shutdown();
-      _centralExecutor = null;
-    }
+    // if (_centralExecutor != null)
+    // {
+    // _centralExecutor.shutdown();
+    // _centralExecutor = null;
+    // }
     try
     {
       super.shutdown();

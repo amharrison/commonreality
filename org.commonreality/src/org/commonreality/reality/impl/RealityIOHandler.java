@@ -56,8 +56,8 @@ public class RealityIOHandler extends DemuxingIoHandler
   {
     _reality = reality;
 
-    _manager = new StateAndConnectionManager(reality, reality
-        .getCentralExector());
+    _manager = new StateAndConnectionManager(reality,
+        reality.getCentralExector());
     /*
      * for now we are wide open...
      */
@@ -104,8 +104,8 @@ public class RealityIOHandler extends DemuxingIoHandler
 
       public void handleMessage(IoSession arg0, IMessage arg1) throws Exception
       {
-//        if (LOGGER.isDebugEnabled())
-//          LOGGER.debug("Unhandled message received" + arg1);
+        // if (LOGGER.isDebugEnabled())
+        // LOGGER.debug("Unhandled message received" + arg1);
       }
 
     });
@@ -114,7 +114,7 @@ public class RealityIOHandler extends DemuxingIoHandler
 
       public void handleMessage(IoSession arg0, IMessage arg1) throws Exception
       {
-//        if (LOGGER.isDebugEnabled()) LOGGER.debug("Sent " + arg1);
+        // if (LOGGER.isDebugEnabled()) LOGGER.debug("Sent " + arg1);
       }
     });
 
@@ -124,8 +124,8 @@ public class RealityIOHandler extends DemuxingIoHandler
           throws Exception
       {
         /*
-         * this can occur if we have pending writes but the connection has already
-         * been closed from the other side, so we silently ignore it
+         * this can occur if we have pending writes but the connection has
+         * already been closed from the other side, so we silently ignore it
          */
         if (exception instanceof WriteToClosedSessionException)
         {
@@ -152,8 +152,6 @@ public class RealityIOHandler extends DemuxingIoHandler
     return _manager;
   }
 
-
-
   @Override
   public void sessionOpened(IoSession session) throws Exception
   {
@@ -163,7 +161,7 @@ public class RealityIOHandler extends DemuxingIoHandler
     new SessionAcknowledgements(session);
 
     super.sessionOpened(session);
-    
+
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Session opened " + session);
   }
 
