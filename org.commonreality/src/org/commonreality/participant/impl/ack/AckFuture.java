@@ -7,6 +7,12 @@ import java.util.concurrent.FutureTask;
 
 import org.commonreality.message.request.IAcknowledgement;
 
+/**
+ * deprecated in favor of CompletableFuture
+ * 
+ * @author harrison
+ */
+@Deprecated
 public class AckFuture extends FutureTask<IAcknowledgement>
 {
   private final long _requestId;

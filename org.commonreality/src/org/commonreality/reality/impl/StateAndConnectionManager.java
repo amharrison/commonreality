@@ -802,77 +802,79 @@ public class StateAndConnectionManager
         {
 
           _lock.readLock().lock();
+          waitForInitializationAck(finalInitAck, identifier);
+          startClientIfNecessary(identifier, session);
+          suspendClientIfNecessary(identifier, session);
 
-          /*
-           * has it ack the initialization?
-           */
-          IControlAcknowledgement controlAck = (IControlAcknowledgement) finalInitAck
-              .get(getAcknowledgementTimeout(), TimeUnit.MILLISECONDS);
-
-          if (controlAck.getState() != IControlCommand.State.INITIALIZE)
-            throw new IllegalStateException("participant " + identifier
-                + " did not initialize : " + controlAck.getState()
-                + ", disconnecting");
-
-          if (LOGGER.isDebugEnabled())
-            LOGGER.debug(identifier + " has initialized");
-
-          /*
-           * now we need to check our state and set theirs accordingly...
-           */
-          if (_reality.stateMatches(IParticipant.State.STARTED,
-              IParticipant.State.SUSPENDED))
-          {
-            if (LOGGER.isDebugEnabled())
-              LOGGER.debug("Requesting " + identifier + " start");
-
-            IControlCommand.State state = ((IControlAcknowledgement) _reality
-                .send(
-                    session,
-                    new ControlCommand(_reality.getIdentifier(),
-                        IControlCommand.State.START)).get(
-                    getAcknowledgementTimeout(), TimeUnit.MILLISECONDS))
-                .getState();
-
-            if (state != IControlCommand.State.START)
-              throw new IllegalStateException("participant " + identifier
-                  + " did not start : " + controlAck.getState()
-                  + ", disconnecting");
-
-            if (LOGGER.isDebugEnabled())
-              LOGGER.debug(identifier + " has started");
-          }
-
-          if (_reality.stateMatches(IParticipant.State.SUSPENDED))
-          {
-            if (LOGGER.isDebugEnabled())
-              LOGGER.debug("Requesting " + identifier + " suspend");
-
-            IControlCommand.State state = ((IControlAcknowledgement) _reality
-                .send(
-                    session,
-                    new ControlCommand(_reality.getIdentifier(),
-                        IControlCommand.State.SUSPEND)).get(
-                    getAcknowledgementTimeout(), TimeUnit.MILLISECONDS))
-                .getState();
-
-            if (state != IControlCommand.State.SUSPEND)
-              throw new IllegalStateException("participant " + identifier
-                  + " not suspend : " + controlAck.getState()
-                  + ", disconnecting");
-
-            if (LOGGER.isDebugEnabled())
-              LOGGER.debug(identifier + " has suspended");
-          }
+          // /*
+          // * has it ack the initialization?
+          // */
+          // IControlAcknowledgement controlAck = (IControlAcknowledgement)
+          // finalInitAck
+          // .get(getAcknowledgementTimeout(), TimeUnit.MILLISECONDS);
+          //
+          // if (controlAck.getState() != IControlCommand.State.INITIALIZE)
+          // throw new IllegalStateException("participant " + identifier
+          // + " did not initialize : " + controlAck.getState()
+          // + ", disconnecting");
+          //
+          // if (LOGGER.isDebugEnabled())
+          // LOGGER.debug(identifier + " has initialized");
+          //
+          // /*
+          // * now we need to check our state and set theirs accordingly...
+          // */
+          // if (_reality.stateMatches(IParticipant.State.STARTED,
+          // IParticipant.State.SUSPENDED))
+          // {
+          // if (LOGGER.isDebugEnabled())
+          // LOGGER.debug("Requesting " + identifier + " start");
+          //
+          // IControlCommand.State state = ((IControlAcknowledgement) _reality
+          // .send(
+          // session,
+          // new ControlCommand(_reality.getIdentifier(),
+          // IControlCommand.State.START)).get(
+          // getAcknowledgementTimeout(), TimeUnit.MILLISECONDS))
+          // .getState();
+          //
+          // if (state != IControlCommand.State.START)
+          // throw new IllegalStateException("participant " + identifier
+          // + " did not start : " + state + ", disconnecting");
+          //
+          // if (LOGGER.isDebugEnabled())
+          // LOGGER.debug(identifier + " has started");
+          // }
+          //
+          // if (_reality.stateMatches(IParticipant.State.SUSPENDED))
+          // {
+          // if (LOGGER.isDebugEnabled())
+          // LOGGER.debug("Requesting " + identifier + " suspend");
+          //
+          // IControlCommand.State state = ((IControlAcknowledgement) _reality
+          // .send(
+          // session,
+          // new ControlCommand(_reality.getIdentifier(),
+          // IControlCommand.State.SUSPEND)).get(
+          // getAcknowledgementTimeout(), TimeUnit.MILLISECONDS))
+          // .getState();
+          //
+          // if (state != IControlCommand.State.SUSPEND)
+          // throw new IllegalStateException("participant " + identifier
+          // + " not suspend : " + state + ", disconnecting");
+          //
+          // if (LOGGER.isDebugEnabled())
+          // LOGGER.debug(identifier + " has suspended");
+          // }
 
         }
-        catch (TimeoutException e)
-        {
-          if (LOGGER.isErrorEnabled())
-            LOGGER.error("Waited too long for control acknowledgement from "
-                + identifier, e);
-          disconnect = true;
-        }
+        // catch (TimeoutException e)
+        // {
+        // if (LOGGER.isErrorEnabled())
+        // LOGGER.error("Waited too long for control acknowledgement from "
+        // + identifier, e);
+        // disconnect = true;
+        // }
         catch (Exception e)
         {
           if (LOGGER.isErrorEnabled())
@@ -891,6 +893,104 @@ public class StateAndConnectionManager
     _centralExecutor.execute(setAndWait);
 
     return true;
+  }
+
+  /**
+   * wait for the client to respond to the ack. Return true if all went well.
+   * 
+   * @param initializeResponse
+   * @return
+   */
+  protected boolean waitForInitializationAck(
+      Future<IAcknowledgement> initializeResponse, IIdentifier client)
+  {
+    try
+    {
+      IControlAcknowledgement controlAck = (IControlAcknowledgement) initializeResponse
+          .get(getAcknowledgementTimeout(), TimeUnit.MILLISECONDS);
+
+      if (controlAck.getState() != IControlCommand.State.INITIALIZE)
+        throw new IllegalStateException("participant " + client
+            + " did not initialize : " + controlAck.getState()
+            + ", disconnecting");
+
+      return true;
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Failed to wait for initialization of " + client, e);
+      return false;
+    }
+  }
+
+  /**
+   * @param client
+   * @return true if all is good. false if we should disconnect
+   */
+  protected boolean startClientIfNecessary(IIdentifier client, IoSession session)
+  {
+    try
+    {
+      /*
+       * now we need to check our state and set theirs accordingly...
+       */
+      if (_reality.stateMatches(IParticipant.State.STARTED,
+          IParticipant.State.SUSPENDED))
+      {
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug("Requesting " + client + " start");
+
+        IControlCommand.State state = ((IControlAcknowledgement) _reality.send(
+            session,
+            new ControlCommand(_reality.getIdentifier(),
+                IControlCommand.State.START)).get(getAcknowledgementTimeout(),
+            TimeUnit.MILLISECONDS)).getState();
+
+        if (state != IControlCommand.State.START)
+          throw new IllegalStateException("participant " + client
+              + " did not start : " + state + ", disconnecting");
+
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(client + " has started");
+      }
+
+      return true;
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Could not wait for start ", e);
+      return false;
+    }
+  }
+
+  protected boolean suspendClientIfNecessary(IIdentifier client,
+      IoSession session)
+  {
+    try
+    {
+      if (_reality.stateMatches(IParticipant.State.SUSPENDED))
+      {
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug("Requesting " + client + " suspend");
+
+        IControlCommand.State state = ((IControlAcknowledgement) _reality.send(
+            session,
+            new ControlCommand(_reality.getIdentifier(),
+                IControlCommand.State.SUSPEND)).get(
+            getAcknowledgementTimeout(), TimeUnit.MILLISECONDS)).getState();
+
+        if (state != IControlCommand.State.SUSPEND)
+          throw new IllegalStateException("participant " + client
+              + " not suspend : " + state + ", disconnecting");
+
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(client + " has suspended");
+      }
+      return true;
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Could not wait for suspend", e);
+      return false;
+    }
   }
 
   /**

@@ -398,7 +398,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
         null))
       send(session, message);
 
-    return SessionAcknowledgements.EMPTY;
+    return EMPTY_ACK;
   }
 
   public Future<IAcknowledgement> send(Object session, IMessage message)
@@ -414,7 +414,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
 
   protected Future<IAcknowledgement> send(IoSession session, IMessage message)
   {
-    Future<IAcknowledgement> rtn = SessionAcknowledgements.EMPTY;
+    Future<IAcknowledgement> rtn = null;
 
     if (session != null)
       synchronized (session)
@@ -430,9 +430,11 @@ public class DefaultReality extends AbstractParticipant implements IReality
       }
     else if (LOGGER.isWarnEnabled()) LOGGER.warn("null session?");
 
-    if (rtn == SessionAcknowledgements.EMPTY && message instanceof IRequest)
+    if (rtn == null && message instanceof IRequest)
       if (LOGGER.isWarnEnabled())
         LOGGER.warn("EMPTY acknowledgment for " + session);
+
+    if (rtn == null) rtn = EMPTY_ACK;
 
     return rtn;
   }
@@ -456,7 +458,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
     if (LOGGER.isWarnEnabled())
       LOGGER.warn("No session associated with " + identifier);
 
-    return SessionAcknowledgements.EMPTY;
+    return EMPTY_ACK;
   }
 
   /**

@@ -40,7 +40,7 @@ public abstract class RequestableObjectManagerDelegate
 
   private IParticipant                   _participant;
 
-  private int                            _requestMore = 0;
+  private int                            _requestMore = 2;
 
   public RequestableObjectManagerDelegate(IParticipant participant)
   {

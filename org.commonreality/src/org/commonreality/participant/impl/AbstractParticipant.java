@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -94,6 +95,14 @@ public abstract class AbstractParticipant implements IParticipant
   static private ScheduledExecutorService  _periodicExecutor;
 
   static private OrderedThreadPoolExecutor _sharedIOExecutor;
+
+  static public CompletableFuture<IAcknowledgement> EMPTY_ACK;
+
+  static
+  {
+    EMPTY_ACK = new CompletableFuture<IAcknowledgement>();
+    EMPTY_ACK.complete(null);
+  }
 
   /**
    * return a shared periodic executor that can be useful in many circumstances
@@ -745,7 +754,7 @@ public abstract class AbstractParticipant implements IParticipant
 
     IoSession session = handler.getCommonRealitySession();
 
-    Future<IAcknowledgement> rtn = SessionAcknowledgements.EMPTY;
+    Future<IAcknowledgement> rtn = null;
 
     if (session != null)
       synchronized (session)
@@ -761,6 +770,9 @@ public abstract class AbstractParticipant implements IParticipant
       }
     else if (LOGGER.isDebugEnabled())
       LOGGER.debug("Null session, could not send");
+
+    if (rtn == null)
+ rtn = EMPTY_ACK;
 
     return rtn;
   }

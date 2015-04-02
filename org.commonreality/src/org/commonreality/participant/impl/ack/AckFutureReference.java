@@ -10,6 +10,12 @@ import java.util.concurrent.Future;
 
 import org.commonreality.message.request.IAcknowledgement;
 
+/**
+ * deprecated in favor of CompletableFuture
+ * 
+ * @author harrison
+ */
+@Deprecated
 public class AckFutureReference implements Comparable<AckFutureReference>
 {
   private final long           _id;

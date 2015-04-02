@@ -37,14 +37,36 @@ public interface IRequestableObjectManager<O extends ISimulationObject, L extend
 {
   /**
    * request than an object be created. The meaning of identifier is going to be
-   * specific to the implementation.
+   * specific to the implementation. May block
    * 
    * @param identifier
    * @return
    */
   public O request(IIdentifier identifier);
   
+  /**
+   * request a new unique id. May block.
+   * 
+   * @param identifier
+   * @return
+   */
   public IIdentifier requestIdentifier(IIdentifier identifier);
+
+  // /**
+  // * explicitly asynch version of {@link #request(IIdentifier)}, supporting
+  // bulk
+  // * requests
+  // *
+  // * @param identifier
+  // * @param numberOfInstances
+  // * @return
+  // */
+  // public CompletableFuture<Collection<O>> request(IIdentifier identifier,
+  // int numberOfInstances);
+  //
+  // public CompletableFuture<IIdentifier> requestIdentifiers(IIdentifier
+  // agentId,
+  // int numberOfIds);
 
   /**
    * When a new block of identifiers is made available from CR, they are added
