@@ -166,11 +166,11 @@ public class BasicClock implements IClock
   @Override
   public CompletableFuture<Double> waitForTime(double triggerTime)
   {
+    final double fTriggerTime = BasicClock.constrainPrecision(triggerTime);
     double now = getTime();
-    boolean hasPassed = now >= triggerTime;
+    boolean hasPassed = now >= fTriggerTime;
 
-    CompletableFuture<Double> rtn = newFuture(BasicClock
-        .constrainPrecision(triggerTime));
+    CompletableFuture<Double> rtn = newFuture(fTriggerTime);
 
     if (hasPassed)
     {
@@ -254,25 +254,27 @@ public class BasicClock implements IClock
    * 
    * @param currentLocalTime
    */
-  protected void setLocalTime(final double currentLocalTime)
+  protected void setLocalTime(double currentLocalTime)
   {
+    final double fCurrentLocalTime = BasicClock
+        .constrainPrecision(currentLocalTime);
     double localTime = 0;
     try
     {
       localTime = runLocked(
           _lock,
           () -> {
-            _globalTime = currentLocalTime - _timeShift;
+            _globalTime = fCurrentLocalTime - _timeShift;
             if (LOGGER.isDebugEnabled())
               LOGGER.debug(String.format("Time[%.2f, %.2f, %.2f]", _globalTime,
-                  currentLocalTime, _timeShift));
-            return currentLocalTime;
+                  fCurrentLocalTime, _timeShift));
+            return fCurrentLocalTime;
           });
     }
     catch (Exception e)
     {
       LOGGER.error(e);
-      localTime = currentLocalTime;
+      localTime = fCurrentLocalTime;
     }
 
     fireExpiredFutures(localTime);
@@ -283,15 +285,16 @@ public class BasicClock implements IClock
    * 
    * @param globalTime
    */
-  protected void setGlobalTime(final double globalTime)
+  protected void setGlobalTime(double globalTime)
   {
+    final double fCurrentGlobalTime = BasicClock.constrainPrecision(globalTime);
     double localTime = 0;
     try
     {
       localTime = runLocked(
           _lock,
           () -> {
-            _globalTime = globalTime;
+            _globalTime = fCurrentGlobalTime;
             if (LOGGER.isDebugEnabled())
               LOGGER.debug(String.format("Time[%.4f, %.4f, %.4f]", _globalTime,
                   _globalTime + _timeShift, _timeShift));

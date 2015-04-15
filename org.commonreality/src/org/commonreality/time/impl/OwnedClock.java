@@ -212,9 +212,9 @@ public class OwnedClock extends BasicClock
         _requestedTimes.put(key, requestedTime);
       }
       else // not a proper owner.
-      if (LOGGER.isErrorEnabled())
+      if (LOGGER.isWarnEnabled())
         LOGGER
-            .error(String
+            .warn(String
                 .format(
                     "Ignoring: %s tried to update clock to %.2f, but is not a known owner (%s)",
                     key, requestedTime, _ownerKeys));

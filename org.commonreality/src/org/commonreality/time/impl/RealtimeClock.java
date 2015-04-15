@@ -36,6 +36,7 @@ public class RealtimeClock extends BasicClock
   public RealtimeClock(ScheduledExecutorService executor)
   {
     super(false, 0.05);
+    _executor = executor;
   }
 
   @Override
@@ -67,18 +68,18 @@ public class RealtimeClock extends BasicClock
     /*
      * get both the global time and the time shift from within lock
      */
-    double[] timeVars = BasicClock
-        .runLocked(
-            getLock(),
-            () -> {
-              if (_clockStartTime < 0)
-                _clockStartTime = System.currentTimeMillis();
+    double[] timeVars = BasicClock.runLocked(
+        getLock(),
+        () -> {
+          if (_clockStartTime < 0)
+            _clockStartTime = System.currentTimeMillis();
 
-              double globalTime = (System.currentTimeMillis() - _clockStartTime) / 1000.0;
-              double timeShift = getTimeShift();
+          double globalTime = BasicClock.constrainPrecision((System
+              .currentTimeMillis() - _clockStartTime) / 1000.0);
+          double timeShift = getTimeShift();
 
-              return new double[] { globalTime, timeShift };
-            });
+          return new double[] { globalTime, timeShift };
+        });
 
     return timeVars[0] + timeVars[1];
   }
@@ -94,14 +95,19 @@ public class RealtimeClock extends BasicClock
   @Override
   public CompletableFuture<Double> waitForTime(double triggerTime)
   {
+    final double fTriggerTime = BasicClock.constrainPrecision(triggerTime);
     CompletableFuture<Double> rtn = newFuture(BasicClock
         .constrainPrecision(triggerTime));
 
     double secondsInFuture = triggerTime - getTime();
-    long ms = (long) (secondsInFuture * 1000);
+    long ms = (long) Math.max(secondsInFuture * 1000, 0);
 
+    /**
+     * due to inaccuracies in the timer, we don't fire expired futures using
+     * getTime(), but the trigger Time
+     */
     _executor.schedule(() -> {
-      fireExpiredFutures(getTime());
+      fireExpiredFutures(fTriggerTime);
     }, ms, TimeUnit.MILLISECONDS);
     return rtn;
   }
