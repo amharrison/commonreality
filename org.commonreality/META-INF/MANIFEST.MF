@@ -65,7 +65,8 @@ Export-Package: org.commonreality,
  org.commonreality.sensors.motor.interpolator,
  org.commonreality.sensors.speech,
  org.commonreality.time,
- org.commonreality.time.impl
+ org.commonreality.time.impl,
+ org.commonreality.util
 Eclipse-BuddyPolicy: registered  
 Eclipse-RegisterBuddy: org.apache.log4j
 Bundle-ClassPath: .

@@ -87,6 +87,9 @@ public class BasicClockTest
     // clock hasn't changed yet
     Assert.assertTrue(!reached.isDone());
 
+    ca.requestAndWaitForTime(0, null); // not actually changing.
+    Assert.assertTrue(!reached.isDone()); // early imply would fail this
+
     // update current
     ca.requestAndWaitForTime(1, null); // basic clock doesnt need key
 
@@ -109,10 +112,49 @@ public class BasicClockTest
     Assert.assertTrue(!reached.isDone());
 
     // update current
-    ca.requestAndWaitForTime(1, null); // basic clock doesnt need key
+    CompletableFuture<Double> assigned = ca.requestAndWaitForTime(1, null); // basic
+                                                                            // clock
+                                                                            // doesnt
+                                                                            // need
+                                                                            // key
 
+    Assert.assertTrue(assigned.isDone());
     Assert.assertEquals(1, clock.getTime(), 0.001);
     Assert.assertTrue(reached.isDone());
   }
+
+  // @Test
+  // public void testTimeShift()
+  // {
+  // IClock[] clocks = createNewClocks();
+  //
+  // Assert.assertEquals(0, clocks[0].getTime(), 0.001);
+  //
+  // clocks[1].getAuthority().get().setLocalTimeShift(1); // "a" is 1 second old
+  // // at the start of sim
+  // clocks[2].getAuthority().get().setLocalTimeShift(-1); // "b" is -1 second
+  // // old at the start of
+  // // sim
+  //
+  // // clock 1 is already at 1, this should be immediate
+  // CompletableFuture<Double> a = clocks[1].getAuthority().get()
+  // .requestAndWaitForTime(1, "a");
+  //
+  // // clock 2 is at -1, so this will not have elapsed
+  // CompletableFuture<Double> b = clocks[2].getAuthority().get()
+  // .requestAndWaitForTime(0.5, "b");
+  //
+  // Assert.assertTrue(a.isDone());
+  // Assert.assertTrue(!b.isDone());
+  //
+  // Assert.assertEquals(0.5, clocks[2].getTime(), 0.001);
+  // Assert.assertTrue(!reached.isDone());
+  //
+  // clocks[1].getAuthority().get().requestAndWaitForChange("a");
+  // clocks[2].getAuthority().get().requestAndWaitForTime(1, "b");
+  // Assert.assertEquals(1, clocks[1].getTime(), 0.001);
+  //
+  // Assert.assertTrue(reached.isDone());
+  // }
 
 }
