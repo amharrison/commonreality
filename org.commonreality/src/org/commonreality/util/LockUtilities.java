@@ -92,7 +92,7 @@ public class LockUtilities
   static protected void attemptUnlock(Lock lock, Object with)
   {
     if (LOGGER.isDebugEnabled())
-      LOGGER.debug(String.format("%s [running %d] releasing[%d]",
+      LOGGER.debug(String.format("%s [running %s] releasing[%d]",
           Thread.currentThread(), with.getClass().getName(), lock.hashCode()));
     _recentLocks.get(lock).close();
     lock.unlock();
@@ -102,7 +102,7 @@ public class LockUtilities
       throws InterruptedException
   {
     if (LOGGER.isDebugEnabled())
-      LOGGER.debug(String.format("%s [running %d] attempting to acquire[%d]",
+      LOGGER.debug(String.format("%s [running %s] attempting to acquire[%d]",
           Thread.currentThread(), with.getClass().getName(), lock.hashCode()));
 
     boolean rtn = false;
