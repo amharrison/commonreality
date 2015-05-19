@@ -20,6 +20,7 @@ import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.message.impl.BaseAcknowledgementMessage;
 import org.commonreality.message.request.time.IRequestTime;
+import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.reality.IReality;
 import org.commonreality.time.IAuthoritativeClock;
 import org.commonreality.time.IClock;
@@ -59,7 +60,13 @@ public class TimeHandler implements MessageHandler<IRequestTime>
       IClock clock = _reality.getClock();
       IAuthoritativeClock auth = clock.getAuthority().get();
 
-      auth.requestAndWaitForTime(when, id);
+      /*
+       * we move this off of the io thread as time updates might signal other
+       * threads, else where potentially creating a deadlock scneario.
+       * Particularly if using the noop transport
+       */
+      AbstractParticipant.getPeriodicExecutor().execute(
+          () -> auth.requestAndWaitForTime(when, id));
     }
     catch(IllegalArgumentException iae)
     {

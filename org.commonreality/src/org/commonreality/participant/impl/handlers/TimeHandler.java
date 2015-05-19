@@ -19,6 +19,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.message.command.time.ITimeCommand;
 import org.commonreality.participant.IParticipant;
+import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.time.IClock;
 import org.commonreality.time.impl.NetworkedClock.NetworkedAuthoritativeClock;
 
@@ -39,7 +40,6 @@ public class TimeHandler implements MessageHandler<ITimeCommand>
     _participant = participant;
   }
 
-
   public void handleMessage(IoSession arg0, ITimeCommand time) throws Exception
   {
 
@@ -53,7 +53,8 @@ public class TimeHandler implements MessageHandler<ITimeCommand>
     /*
      * time arrived is global.
      */
-    auth.timeChangeReceived(time.getTime());
+    AbstractParticipant.getPeriodicExecutor().execute(
+        () -> auth.timeChangeReceived(time.getTime()));
 
     // if (clock instanceof INetworkedClock)
     // {
@@ -61,7 +62,7 @@ public class TimeHandler implements MessageHandler<ITimeCommand>
     // LOGGER.debug("Got a time command for " + time.getTime() + " setting");
     // ((INetworkedClock) clock).setCurrentTimeCommand(time);
     // }
-    
+
   }
 
 }
