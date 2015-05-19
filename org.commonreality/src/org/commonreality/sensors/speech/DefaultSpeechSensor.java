@@ -139,6 +139,7 @@ public class DefaultSpeechSensor extends AbstractSensor implements ISpeaker
         }
         catch (InterruptedException e)
         {
+          LOGGER.warn("Interrupted, expecting termination ", e);
           /*
            * this isn't an error.. if we're interrupted we shouldn't continue
            * running

@@ -206,6 +206,7 @@ public class DefaultKeyboardSensor extends AbstractSensor
         }
         catch (InterruptedException ie)
         {
+          LOGGER.warn("Interrupted, expecting termination ", ie);
           // perfectly legit, clear the flag
           Thread.interrupted();
         }
