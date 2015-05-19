@@ -6,6 +6,7 @@ package org.commonreality.time.impl;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -67,6 +68,12 @@ public class OwnedClock extends BasicClock
       _ownersAccountedFor = new HashSet<Object>();
     }
 
+    @Override
+    public OwnedClock getDelegate()
+    {
+      return (OwnedClock) super.getDelegate();
+    }
+
     public void getOwners(final Collection<Object> owners)
     {
       BasicClock.runLocked(getDelegate().getLock(), () -> {
@@ -90,90 +97,125 @@ public class OwnedClock extends BasicClock
         return _ownersAccountedFor.containsAll(_ownerKeys);
       });
 
-      if (mustUpdate) updateTime();
+      if (mustUpdate)
+      {
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug("owner was removed. forcing update of time");
+        BasicClock.runLocked(delegate.getLock(), () -> updateTime());
+      }
     }
 
+    /**
+     * run within the lock already
+     */
     @Override
     protected boolean requestTimeChange(final double targetTime,
         final Object key)
     {
-      BasicClock delegate = getDelegate();
-      boolean rtn = BasicClock.runLocked(delegate.getLock(), () -> {
-        heardFrom(key, targetTime);
-        return _ownersAccountedFor.containsAll(_ownerKeys);
-      });
-      return rtn;
+      super.requestTimeChange(targetTime, key);
+      heardFrom(key, targetTime);
+      return _ownersAccountedFor.containsAll(_ownerKeys);
     }
 
     @Override
     public CompletableFuture<Double> requestAndWaitForTime(double targetTime,
         final Object key)
     {
-      targetTime = BasicClock.constrainPrecision(targetTime);
-      BasicClock bc = getDelegate();
-      CompletableFuture<Double> rtn = bc.newFuture(targetTime);
-      if (requestTimeChange(targetTime, key)) updateTime();
+      final double fTargetTime = BasicClock.constrainPrecision(targetTime);
+      OwnedClock bc = getDelegate();
+      CompletableFuture<Double> rtn = bc.newFuture(targetTime, bc.getTime());
+
+      boolean fireNotifier = BasicClock.runLocked(bc.getLock(), () -> {
+        if (requestTimeChange(fTargetTime, key))
+        {
+          updateTime();
+          return true;
+        }
+        return false;
+      });
+
+      if (fireNotifier && bc._changeNotifier != null)
+        bc._changeNotifier.accept(bc.getLocalTime(), bc);
+
       return rtn;
     }
 
     @Override
     public CompletableFuture<Double> requestAndWaitForChange(final Object key)
     {
-      BasicClock bc = getDelegate();
-      CompletableFuture<Double> rtn = bc.newFuture(Double.NaN);
-      if (requestTimeChange(Double.NaN, key)) updateTime();
+      OwnedClock bc = getDelegate();
+      CompletableFuture<Double> rtn = bc.newFuture(Double.NaN, bc.getTime());
+      boolean fireNotifier = BasicClock.runLocked(bc.getLock(), () -> {
+        if (requestTimeChange(Double.NaN, key))
+        {
+          updateTime();
+          return true;
+        }
+        return false;
+      });
+
+      // notification outside of the lock
+      if (fireNotifier && bc._changeNotifier != null)
+        bc._changeNotifier.accept(bc.getLocalTime(), bc);
       return rtn;
     }
 
+    /**
+     * run in lock
+     * 
+     * @param clear
+     * @return
+     */
     private double mininumRequestedTime(final boolean clear)
     {
-      return BasicClock
-          .runLocked(
-              getDelegate().getLock(),
-              () -> {
-                double rtn = Double.POSITIVE_INFINITY;
-                for (Double request : _requestedTimes.values())
-                  if (request < rtn) rtn = request;
+      double rtn = Double.POSITIVE_INFINITY;
+      for (Double request : _requestedTimes.values())
+        if (request < rtn) rtn = request;
 
-                if (LOGGER.isDebugEnabled())
-                  LOGGER.debug(String.format("Minimum time : %.4f", rtn));
+      if (Double.isInfinite(rtn))
+      {
+        BasicClock delegate = getDelegate();
+        rtn = delegate.getTime() + delegate.getMinimumTimeIncrement();
+      }
 
-                /*
-                 * clear out those that this will apply to. including any
-                 * infinities (i.e. any change). Anyone waiting for a time yet
-                 * to be reached will still be considered accounted for, so it
-                 * will work reguardless of whether or not they make a
-                 * subsequent request.
-                 */
-                if (clear)
-                  for (Map.Entry<Object, Double> entry : _requestedTimes
-                      .entrySet())
-                  {
-                    double triggerTime = entry.getValue();
-                    /*
-                     * those that will wake up are considered unaccounted for.
-                     */
-                    if (triggerTime <= rtn || !Double.isFinite(triggerTime))
-                    {
-                      Object owner = entry.getKey();
-                      _ownersAccountedFor.remove(owner);
-                      // _requestedTimes.remove(owner);
-                    }
-                  }
-                return rtn;
-              });
+      /*
+       * if we assume that a request is only sent once per cycle, we need to
+       * clear those that will wake up from this. We include the infinites, as
+       * they will be awaking as well.
+       */
+      if (clear)
+      {
+        Iterator<Map.Entry<Object, Double>> timeItr = _requestedTimes
+            .entrySet().iterator();
+        while (timeItr.hasNext())
+        {
+          Map.Entry<Object, Double> entry = timeItr.next();
+          double triggerTime = entry.getValue();
+          if (triggerTime <= rtn || Double.isInfinite(triggerTime))
+          {
+            _ownersAccountedFor.remove(entry.getKey());
+            timeItr.remove();
+          }
+        }
+      }
+
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Minimum time : %.4f", rtn));
+
+      return rtn;
     }
 
     /**
      * actually find the smallest increment to advance, and do so, firing off
-     * completions
+     * completions. called in lock
      */
-    protected void updateTime()
+    private void updateTime()
     {
       if (LOGGER.isDebugEnabled())
         LOGGER.debug(String.format("Heard from all owners"));
 
       double minimumTime = mininumRequestedTime(true);
+
       if (Double.isInfinite(minimumTime))
         minimumTime = BasicClock.constrainPrecision(getTime()
             + getDelegate().getMinimumTimeIncrement());
@@ -181,12 +223,9 @@ public class OwnedClock extends BasicClock
       if (LOGGER.isDebugEnabled())
         LOGGER.debug(String.format("Updating time to %.4f", minimumTime));
 
-      OwnedClock delegate = (OwnedClock) getDelegate();
+      OwnedClock delegate = getDelegate();
       // actually update and fire things off.
       delegate.setLocalTime(minimumTime);
-
-      if (delegate._changeNotifier != null)
-        delegate._changeNotifier.accept(minimumTime, delegate);
     }
 
     /**

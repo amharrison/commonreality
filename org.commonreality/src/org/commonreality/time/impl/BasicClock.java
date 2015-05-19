@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.time.IAuthoritativeClock;
 import org.commonreality.time.IClock;
+import org.commonreality.util.LockUtilities;
 
 public class BasicClock implements IClock
 {
@@ -72,6 +73,15 @@ public class BasicClock implements IClock
   private IAuthoritativeClock                    _authoritative;
 
   private double                                 _minimumTimeIncrement = 0.05;
+  
+  
+  /**
+   * diagnostic variables for interrogation in case something goes wrong.
+   */
+  private volatile long _lastUpdateSystemTime;
+  private volatile double _lastUpdateLocalTimeValue;
+  private volatile double _lastRequestedLocalTimeValue;
+  private volatile long _lastRequestSystemTime;
 
   public BasicClock()
   {
@@ -101,38 +111,82 @@ public class BasicClock implements IClock
     return new BasicAuthoritativeClock(this);
   }
 
+  /**
+   * exposed for diagnostic support
+   * @return
+   */
+  protected long getLastUpdateSystemTime()
+  {
+    return _lastUpdateSystemTime;
+  }
+  
+  /**
+   * exposed for diagnostic support
+   * @return
+   */
+  protected double getLastUpdateLocalTime()
+  {
+    return _lastUpdateLocalTimeValue;
+  }
+  
+  protected double getLastRequestLocalTime()
+  {
+    return _lastRequestedLocalTimeValue;
+  }
+  
+  protected long getLastRequestSystemTime()
+  {
+    return _lastRequestSystemTime;
+  }
+  
+
+  
   static protected void runLocked(Lock lock, Runnable r)
   {
     try
     {
-      lock.lock();
-      r.run();
+      LockUtilities.runLocked(lock, r);
     }
-    finally
+    catch (InterruptedException e)
     {
-      lock.unlock();
+      LOGGER.error(String.format("%s lock[%d] threw exception %s ", r, lock.hashCode(), e.getMessage()), e);
+      LOGGER.error("Available clock information : "+ClockInterrogator.getAllClockDetails());
+      throw new RuntimeException(e);
     }
   }
 
   static protected <T> T runLocked(Lock lock, Callable<T> c)
   {
-    T rtn = null;
     try
     {
-      lock.lock();
-      rtn = c.call();
+      T rtn = LockUtilities.runLocked(lock, c);
       return rtn;
     }
     catch (Exception e)
     {
-      LOGGER.error(
-          "Exception occured while processing callable within clock lock ", e);
-      return null;
+      // TODO Auto-generated catch block
+      LOGGER.error(String.format("%s lock[%d] threw exception %s ", c, lock.hashCode(), e.getMessage()), e);
+      LOGGER.error("Available clock information : "+ClockInterrogator.getAllClockDetails());
+      throw new RuntimeException(e);
     }
-    finally
-    {
-      lock.unlock();
-    }
+
+    // T rtn = null;
+    // try
+    // {
+    // lock.lock();
+    // rtn = c.call();
+    // return rtn;
+    // }
+    // catch (Exception e)
+    // {
+    // LOGGER.error(
+    // "Exception occured while processing callable within clock lock ", e);
+    // return null;
+    // }
+    // finally
+    // {
+    // lock.unlock();
+    // }
   }
 
   @Override
@@ -160,7 +214,7 @@ public class BasicClock implements IClock
   @Override
   public CompletableFuture<Double> waitForChange()
   {
-    return newFuture(Double.NaN);
+    return newFuture(Double.NaN, getTime());
   }
 
   @Override
@@ -170,7 +224,7 @@ public class BasicClock implements IClock
     double now = getTime();
     boolean hasPassed = now >= fTriggerTime;
 
-    CompletableFuture<Double> rtn = newFuture(fTriggerTime);
+    CompletableFuture<Double> rtn = newFuture(fTriggerTime, now);
 
     if (hasPassed)
     {
@@ -209,7 +263,7 @@ public class BasicClock implements IClock
    */
   protected double getLocalTime()
   {
-    return _globalTime + _timeShift;
+    return constrainPrecision(_globalTime + _timeShift);
   }
 
   /**
@@ -229,21 +283,56 @@ public class BasicClock implements IClock
 
   /**
    * create a new future that will be completed at or after trigger time
-   * (Double.NaN if any change)
+   * (Double.NaN if any change).
    * 
    * @param triggerTime
    * @return
    */
-  protected CompletableFuture<Double> newFuture(final double triggerTime)
+  protected CompletableFuture<Double> newFuture(final double triggerTime,
+      final double currentTime)
   {
-    final CompletableFuture<Double> rtn = new CompletableFuture<Double>();
+    final CompletableFuture<Double> rtn = new CompletableFuture<Double>() {
+      @Override
+      public boolean complete(Double d)
+      {
+        if (Double.isNaN(triggerTime))
+        {
+          /*
+           * here's a question, this means that waitForChange is actually:
+           * waitForIncrement. Should there be both literal methods?
+           */
+          // did this actually change?
+          if (d <= currentTime)
+          {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String
+                  .format("Time hasn't incremented, waitForAny ignoring"));
+            return false;
+          }
+        }
+        else // didn't actually pass
+        if (d < triggerTime)
+        {
+          if (LOGGER.isDebugEnabled())
+            LOGGER
+                .debug(String.format(
+                    "Timed hasn't incremented, waitFor %.4f ignoring",
+                    triggerTime));
+          return false;
+        }
 
-    runLocked(_lock, () -> {
+        return super.complete(d);
+      }
+    };
+
+    runLocked(
+        _lock,
+        () -> {
           if (LOGGER.isDebugEnabled())
             LOGGER.debug(String.format("[%d].waitFor(%.4f)", rtn.hashCode(),
                 triggerTime));
-      _pendingCompletables.put(rtn, triggerTime);
-    });
+          _pendingCompletables.put(rtn, triggerTime);
+        });
 
     return rtn;
   }
@@ -264,6 +353,8 @@ public class BasicClock implements IClock
       localTime = runLocked(
           _lock,
           () -> {
+            _lastUpdateSystemTime = System.nanoTime();
+            _lastUpdateLocalTimeValue = fCurrentLocalTime;
             _globalTime = fCurrentLocalTime - _timeShift;
             if (LOGGER.isDebugEnabled())
               LOGGER.debug(String.format("Time[%.2f, %.2f, %.2f]", _globalTime,
@@ -294,6 +385,8 @@ public class BasicClock implements IClock
       localTime = runLocked(
           _lock,
           () -> {
+            _lastUpdateSystemTime = System.nanoTime();
+            _lastUpdateLocalTimeValue = fCurrentGlobalTime + _timeShift;
             _globalTime = fCurrentGlobalTime;
             if (LOGGER.isDebugEnabled())
               LOGGER.debug(String.format("Time[%.4f, %.4f, %.4f]", _globalTime,
@@ -312,49 +405,86 @@ public class BasicClock implements IClock
 
   protected void fireExpiredFutures(double localTime)
   {
-    FastList<CompletableFuture<Double>> container = FastList.newInstance();
+    // FastList<CompletableFuture<Double>> container = FastList.newInstance();
 
     // get and remove
-    removeExpiredCompletables(localTime, container);
+    removeExpiredCompletables(localTime);
 
-    if (LOGGER.isDebugEnabled())
-      LOGGER.debug(String.format("Notifying %d futures", container.size()));
-
-    // fire and forget
-    for (CompletableFuture<Double> future : container)
-      future.complete(localTime);
-
-    FastList.recycle(container);
+    // FastList.recycle(container);
   }
 
   protected Collection<CompletableFuture<Double>> removeExpiredCompletables(
-      final double now, final Collection<CompletableFuture<Double>> container)
+      final double now)
   {
-    runLocked(
-        _lock,
-        () -> {
-          if (LOGGER.isDebugEnabled())
-            LOGGER.debug(String.format("Collecting expired futures after %.4f",
-                now));
+    final FastList<Map.Entry<CompletableFuture<Double>, Double>> pending = FastList
+        .newInstance();
 
-          Iterator<Map.Entry<CompletableFuture<Double>, Double>> itr = _pendingCompletables
-              .entrySet().iterator();
-          while (itr.hasNext())
-          {
-            Map.Entry<CompletableFuture<Double>, Double> entry = itr.next();
-            double trigger = entry.getValue();
-            if (Double.isNaN(trigger) || trigger <= now)
-            {
-              CompletableFuture<Double> future = entry.getKey();
-              if (LOGGER.isDebugEnabled())
-                LOGGER.debug(String.format("[%d].trigger = %.4f",
-                    future.hashCode(), trigger));
-              container.add(future);
-              itr.remove();
-            }
-          }
-        });
-    return container;
+    // grab the pending from the lock.. we must do the processing outside of the
+    // lock.
+    runLocked(_lock, () -> {
+      pending.addAll(_pendingCompletables.entrySet());
+    });
+
+    Iterator<Map.Entry<CompletableFuture<Double>, Double>> itr = pending
+        .iterator();
+    while (itr.hasNext())
+    {
+      Map.Entry<CompletableFuture<Double>, Double> entry = itr.next();
+      double trigger = entry.getValue();
+      CompletableFuture<Double> future = entry.getKey();
+
+      if (Double.isNaN(trigger) || trigger <= now)
+      {
+        if (!future.complete(now))
+        {
+          futureRejectedCompletion(future, trigger, now);
+          itr.remove(); // we remove all but the actually compelted
+        }
+        else if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("[%d].trigger = %.4f", future.hashCode(),
+              trigger));
+      }
+      else
+      {
+        futureStillPending(future, trigger, now);
+        itr.remove();
+      }
+    }
+
+    /*
+     * and remove those that completed.
+     */
+    runLocked(_lock, () -> {
+      pending.forEach((e) -> _pendingCompletables.remove(e.getKey()));
+    });
+
+    FastList.recycle(pending);
+
+    return null;
+  }
+
+  protected void futureRejectedCompletion(CompletableFuture<Double> future,
+      double triggerTime, double currentTime)
+  {
+    LOGGER.warn(String.format("Rejected completion? t: %.5f c:%.5f",
+        triggerTime, currentTime));
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER
+          .debug(String
+              .format("future didn't actually complete. Normal if time hasn't actually changed. But ideally this shouldn't happen"));
+  }
+
+  protected void futureStillPending(CompletableFuture<Double> future,
+      double triggerTime, double currentTime)
+  {
+    LOGGER.warn(String.format("Pending completion? t: %.5f c:%.5f",
+        triggerTime, currentTime));
+
+    if (Math.abs(triggerTime - currentTime) < 0.001)
+      LOGGER.warn(String.format(
+          "Potential lost update due to precision trigger: %.5f  now: %.5f",
+          triggerTime, currentTime));
   }
 
   /**
@@ -396,6 +526,9 @@ public class BasicClock implements IClock
      */
     protected boolean requestTimeChange(double targetTime, Object key)
     {
+      BasicClock bc = getDelegate();
+      bc._lastRequestedLocalTimeValue = targetTime;
+      bc._lastRequestSystemTime = System.nanoTime();
       return true;
     }
 
@@ -403,10 +536,12 @@ public class BasicClock implements IClock
     public CompletableFuture<Double> requestAndWaitForTime(double targetTime,
         final Object key)
     {
-      targetTime = BasicClock.constrainPrecision(targetTime);
+      final double fTargetTime = BasicClock.constrainPrecision(targetTime);
       BasicClock bc = getDelegate();
-      CompletableFuture<Double> rtn = bc.newFuture(targetTime);
-      if (requestTimeChange(targetTime, key)) bc.setLocalTime(targetTime);
+      CompletableFuture<Double> rtn = bc.newFuture(targetTime, bc.getTime());
+      BasicClock.runLocked(bc.getLock(), () -> {
+        if (requestTimeChange(fTargetTime, key)) bc.setLocalTime(fTargetTime);
+      });
       return rtn;
     }
 
@@ -414,9 +549,13 @@ public class BasicClock implements IClock
     public CompletableFuture<Double> requestAndWaitForChange(final Object key)
     {
       BasicClock bc = getDelegate();
-      CompletableFuture<Double> rtn = bc.newFuture(Double.NaN);
-      if (requestTimeChange(Double.NaN, key))
-        bc.setLocalTime(getTime() + bc._minimumTimeIncrement);
+      CompletableFuture<Double> rtn = bc.newFuture(Double.NaN, bc.getTime());
+      BasicClock.runLocked(
+          bc.getLock(),
+          () -> {
+            if (requestTimeChange(Double.NaN, key))
+              bc.setLocalTime(getTime() + bc._minimumTimeIncrement);
+          });
       return rtn;
     }
 

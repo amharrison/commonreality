@@ -87,7 +87,7 @@ public class RealtimeClock extends BasicClock
   @Override
   public CompletableFuture<Double> waitForChange()
   {
-    CompletableFuture<Double> rtn = newFuture(Double.NaN);
+    CompletableFuture<Double> rtn = newFuture(Double.NaN, getTime());
     fireExpiredFutures(getTime());
     return rtn;
   }
@@ -96,8 +96,8 @@ public class RealtimeClock extends BasicClock
   public CompletableFuture<Double> waitForTime(double triggerTime)
   {
     final double fTriggerTime = BasicClock.constrainPrecision(triggerTime);
-    CompletableFuture<Double> rtn = newFuture(BasicClock
-        .constrainPrecision(triggerTime));
+    CompletableFuture<Double> rtn = newFuture(
+        BasicClock.constrainPrecision(triggerTime), getTime());
 
     double secondsInFuture = triggerTime - getTime();
     long ms = (long) Math.max(secondsInFuture * 1000, 0);
