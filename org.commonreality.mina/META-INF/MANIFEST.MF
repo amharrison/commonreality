@@ -4,11 +4,14 @@ Bundle-Name: Mina Plug-in
 Bundle-SymbolicName: org.commonreality.mina
 Bundle-Version: 1.2.0.qualifier
 Bundle-Vendor: jactr.org
-Require-Bundle: org.jactr.support,
- org.commonreality.mina.core
-Export-Package: org.commonreality.mina.filter,
+Require-Bundle: org.commonreality.mina.core,
+ org.commonreality.net;bundle-version="1.0.0",
+ org.commonreality.support;bundle-version="1.0.0",
+ org.apache.log4j;bundle-version="1.2.15";resolution:=optional
+Export-Package: org.commonreality.mina,
  org.commonreality.mina.protocol,
  org.commonreality.mina.service,
  org.commonreality.mina.transport
-Eclipse-RegisterBuddy: org.apache.log4j
+Eclipse-RegisterBuddy: org.apache.log4j,
+ org.commonreality.net
 Bundle-ClassPath: .

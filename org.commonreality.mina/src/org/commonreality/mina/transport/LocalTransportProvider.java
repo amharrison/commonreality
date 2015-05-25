@@ -22,18 +22,18 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
+import org.commonreality.net.transport.ITransportProvider;
 
 /**
  * @author developer
  */
-public class LocalTransportProvider implements IMINATransportProvider
+public class LocalTransportProvider implements ITransportProvider
 {
   /**
    * logger definition
    */
-  static private final Log             LOGGER        = LogFactory
-                                                         .getLog(LocalTransportProvider.class);
-
+  static private final Log LOGGER = LogFactory
+                                      .getLog(LocalTransportProvider.class);
 
   /**
    * @see org.commonreality.mina.transport.IMINATransportProvider#createAcceptor()
@@ -52,53 +52,36 @@ public class LocalTransportProvider implements IMINATransportProvider
   }
 
   /**
-   * @see org.commonreality.mina.transport.IMINATransportProvider#createConfiguration()
-   */
-//  public IoServiceConfig createAcceptorConfiguration()
-//  {
-//    IoServiceConfig conf = new BaseIoAcceptorConfig() {
-//      public IoSessionConfig getSessionConfig()
-//      {
-//        return CONFIG;
-//      }
-//    };
-//    conf.setThreadModel(ThreadModel.MANUAL);
-//    return conf;
-//  }
-//  
-//  public IoServiceConfig createConnectorConfiguration()
-//  {
-//    IoServiceConfig conf = new BaseIoConnectorConfig() {
-//      public IoSessionConfig getSessionConfig()
-//      {
-//        return CONFIG;
-//      }
-//    };
-//    conf.setThreadModel(ThreadModel.MANUAL);
-//    
-//    return conf;
-//  }
-
-  /** 
    * @see org.commonreality.mina.transport.IMINATransportProvider#createAddress(java.lang.Object[])
    */
   public SocketAddress createAddress(Object... args)
   {
-    if(args.length!=1)
-      throw new IllegalArgumentException("Must only provide one integer or long");
-    
+    if (args.length != 1)
+      throw new IllegalArgumentException(
+          "Must only provide one integer or long");
+
     Object arg = args[0];
     int port = -1;
-    
-    if(arg instanceof String)
-      port = Integer.parseInt((String)arg);
-    else
-      if(arg instanceof Number)
-        port = ((Number)arg).intValue();
-    
-    if(port>0)
-      return new VmPipeAddress(port);
-    
-    throw new IllegalArgumentException("Invalid port specified, got "+port+" from "+arg);
+
+    if (arg instanceof String)
+      port = Integer.parseInt((String) arg);
+    else if (arg instanceof Number) port = ((Number) arg).intValue();
+
+    if (port > 0) return new VmPipeAddress(port);
+
+    throw new IllegalArgumentException("Invalid port specified, got " + port
+        + " from " + arg);
+  }
+
+  @Override
+  public Object configureServer()
+  {
+    return createAcceptor();
+  }
+
+  @Override
+  public Object configureClient()
+  {
+    return createConnector();
   }
 }

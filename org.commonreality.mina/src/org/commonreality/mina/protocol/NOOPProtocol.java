@@ -15,16 +15,23 @@ package org.commonreality.mina.protocol;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.commonreality.net.protocol.IProtocolConfiguration;
 /**
  * @author developer
  *
  */
-public class NOOPProtocol extends BasicProtocol
+public class NOOPProtocol implements IProtocolConfiguration
 {
   /**
    logger definition
    */
   static private final Log LOGGER = LogFactory.getLog(NOOPProtocol.class);
+
+  @Override
+  public void configure(Object session)
+  {
+
+  }
 
 }
 

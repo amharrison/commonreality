@@ -18,11 +18,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mina.core.service.IoService;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.serialization.ObjectSerializationCodecFactory;
+import org.commonreality.net.protocol.IProtocolConfiguration;
 /**
  * @author developer
  *
  */
-public class SerializingProtocol extends BasicProtocol
+public class SerializingProtocol implements IProtocolConfiguration
 {
   /**
    logger definition
@@ -32,16 +33,13 @@ public class SerializingProtocol extends BasicProtocol
 
   
 
-  
-  /**
-   * @see org.commonreality.mina.protocol.IMINAProtocolConfiguration#configure(org.apache.mina.common.IoServiceConfig)
-   */
+
   @Override
-  public void configure(IoService service)
+  public void configure(Object session)
   {
+    IoService service = (IoService) session;
     
     service.getFilterChain().addLast("codec", new ProtocolCodecFilter( new ObjectSerializationCodecFactory()));
-    super.configure(service);
   }
 
 }

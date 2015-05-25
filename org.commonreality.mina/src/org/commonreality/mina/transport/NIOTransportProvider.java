@@ -24,6 +24,7 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.transport.socket.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
+import org.commonreality.net.transport.ITransportProvider;
 
 /**
  * when using an NIOTransportProvider you must ensure that the executor has more
@@ -31,7 +32,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * 
  * @author developer
  */
-public class NIOTransportProvider implements IMINATransportProvider
+public class NIOTransportProvider implements ITransportProvider
 {
   /**
    * logger definition
@@ -112,5 +113,17 @@ public class NIOTransportProvider implements IMINATransportProvider
 
     throw new IllegalArgumentException("Could not get host information from " +
         first);
+  }
+
+  @Override
+  public Object configureServer()
+  {
+    return createAcceptor();
+  }
+
+  @Override
+  public Object configureClient()
+  {
+    return createConnector();
   }
 }
