@@ -3,7 +3,7 @@
 <plugin>
    <extension-point id="sensors" name="CommonReality Sensor Implementations" schema="schema/org.commonreality.sensor.exsd"/>
    <extension
-         point="org.commonreality.sensors">
+         point="org.commonreality.core.sensors">
       <sensor
             class="org.commonreality.sensors.keyboard.DefaultKeyboardSensor"
             clock-owner="false"
@@ -23,7 +23,7 @@
             </description>
          </property>
       </sensor>
-      <sensor
+      <sensor 
             class="org.commonreality.sensors.speech.DefaultSpeechSensor"
             clock-owner="false"
             name="SpeechSensor">

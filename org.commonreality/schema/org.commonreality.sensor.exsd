@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!-- Schema file written by PDE -->
-<schema targetNamespace="org.commonreality">
+<schema targetNamespace="org.commonreality.core" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
       <appInfo>
-         <meta.schema plugin="org.commonreality" id="sensor" name="CommonReality Sensor Implementation"/>
+         <meta.schema plugin="org.commonreality.core" id="sensor" name="CommonReality Sensor Implementation"/>
       </appInfo>
       <documentation>
          Describes a sensor that can be connected to CommonReality
@@ -11,6 +11,11 @@
    </annotation>
 
    <element name="extension">
+      <annotation>
+         <appInfo>
+            <meta.element />
+         </appInfo>
+      </annotation>
       <complexType>
          <sequence>
             <element ref="sensor" minOccurs="1" maxOccurs="unbounded"/>
@@ -147,13 +152,5 @@
       </documentation>
    </annotation>
 
-   <annotation>
-      <appInfo>
-         <meta.section type="copyright"/>
-      </appInfo>
-      <documentation>
-         
-      </documentation>
-   </annotation>
 
 </schema>

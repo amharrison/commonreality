@@ -1,72 +1,33 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Common Reality Plug-in
-Bundle-SymbolicName: org.commonreality;singleton:=true
+Bundle-SymbolicName: org.commonreality.core;singleton:=true
 Bundle-Version: 1.2.8.qualifier
 Bundle-Vendor: commonreality.org
 Require-Bundle: org.commonreality.mina,
- org.jactr.support,
- org.junit;resolution:=optional,
- org.commonreality.mina.core
+ org.commonreality.net;bundle-version="1.0.0",
+ org.commonreality.api;bundle-version="1.0.0",
+ org.commonreality.time;bundle-version="1.0.0",
+ org.commonreality.support;bundle-version="1.0.0"
 Export-Package: org.commonreality,
  org.commonreality.agents,
- org.commonreality.efferent,
- org.commonreality.efferent.event,
  org.commonreality.efferent.impl,
  org.commonreality.event,
  org.commonreality.executor,
- org.commonreality.identifier,
- org.commonreality.identifier.impl,
- org.commonreality.message,
- org.commonreality.message.command,
- org.commonreality.message.command.control,
- org.commonreality.message.command.object,
- org.commonreality.message.command.time,
- org.commonreality.message.credentials,
- org.commonreality.message.impl,
- org.commonreality.message.notification,
- org.commonreality.message.request,
- org.commonreality.message.request.connect,
- org.commonreality.message.request.object,
- org.commonreality.message.request.time,
- org.commonreality.modalities,
- org.commonreality.modalities.aural,
- org.commonreality.modalities.motor,
- org.commonreality.modalities.visual,
- org.commonreality.modalities.visual.geom,
- org.commonreality.modalities.vocal,
- org.commonreality.notification,
- org.commonreality.notification.event,
  org.commonreality.notification.impl,
- org.commonreality.object,
  org.commonreality.object.delta,
  org.commonreality.object.identifier,
- org.commonreality.object.manager,
  org.commonreality.object.manager.event,
  org.commonreality.object.manager.impl,
  org.commonreality.parser,
- org.commonreality.participant,
- org.commonreality.participant.addressing,
  org.commonreality.participant.addressing.impl,
  org.commonreality.participant.impl,
  org.commonreality.participant.impl.ack,
- org.commonreality.participant.impl.filters,
  org.commonreality.participant.impl.handlers,
- org.commonreality.reality,
  org.commonreality.reality.control,
  org.commonreality.reality.impl,
  org.commonreality.reality.impl.handler,
- org.commonreality.sensors,
- org.commonreality.sensors.aural,
- org.commonreality.sensors.handlers,
- org.commonreality.sensors.keyboard,
- org.commonreality.sensors.keyboard.map,
- org.commonreality.sensors.motor,
- org.commonreality.sensors.motor.interpolator,
- org.commonreality.sensors.speech,
- org.commonreality.time,
- org.commonreality.time.impl,
- org.commonreality.util
+ org.commonreality.sensors
 Eclipse-BuddyPolicy: registered  
 Eclipse-RegisterBuddy: org.apache.log4j
 Bundle-ClassPath: .
