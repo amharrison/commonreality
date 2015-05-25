@@ -11,7 +11,7 @@ import org.commonreality.event.EventDispatcher;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.identifier.IIdentifier.Type;
 import org.commonreality.identifier.impl.BasicIdentifier;
-import org.commonreality.message.notification.NotificationMessage;
+import org.commonreality.net.message.notification.NotificationMessage;
 import org.commonreality.notification.INotification;
 import org.commonreality.notification.INotificationManager;
 import org.commonreality.notification.event.INotificationListener;

@@ -27,7 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.efferent.IEfferentCommand;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.IMessage;
+import org.commonreality.net.message.IMessage;
 import org.commonreality.object.IMutableObject;
 import org.commonreality.object.delta.IObjectDelta;
 import org.commonreality.object.delta.ObjectDelta;

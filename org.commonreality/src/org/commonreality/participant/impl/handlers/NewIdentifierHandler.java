@@ -17,10 +17,10 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.request.object.INewIdentifierAcknowledgement;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.request.object.INewIdentifierAcknowledgement;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.object.manager.IRequestableObjectManager;
 
 /**
@@ -28,13 +28,15 @@ import org.commonreality.object.manager.IRequestableObjectManager;
  * 
  * @author developer
  */
-public class NewIdentifierHandler implements MessageHandler<INewIdentifierAcknowledgement> 
+public class NewIdentifierHandler implements
+    IMessageHandler<INewIdentifierAcknowledgement>
 {
   /**
    * logger definition
    */
-  static private final Log LOGGER = LogFactory.getLog(NewIdentifierHandler.class);
-  
+  static private final Log     LOGGER = LogFactory
+                                          .getLog(NewIdentifierHandler.class);
+
   private GeneralObjectHandler _objectHandler;
 
   public NewIdentifierHandler(GeneralObjectHandler objectHandler)
@@ -42,11 +44,31 @@ public class NewIdentifierHandler implements MessageHandler<INewIdentifierAcknow
     _objectHandler = objectHandler;
   }
 
- 
+  // public void handleMessage(IoSession session, INewIdentifierAcknowledgement
+  // ack) throws Exception
+  // {
+  //
+  // Collection<IIdentifier> newIdentifiers = ack.getIdentifiers();
+  // if (LOGGER.isDebugEnabled())
+  // LOGGER.debug("Adding new identifiers " + newIdentifiers);
+  // /*
+  // * we snag the id of the first one to figure out which IRequestObjectManager
+  // * to send this to
+  // */
+  // IIdentifier first = newIdentifiers.iterator().next();
+  // IRequestableObjectManager manager = (IRequestableObjectManager)
+  // _objectHandler.getActualManager(first
+  // .getType());
+  // if (manager != null)
+  // manager.addFreeIdentifiers(newIdentifiers);
+  // else if (LOGGER.isWarnEnabled())
+  // LOGGER.warn("No clue who to give these identifiers to");
+  //
+  // }
 
-  public void handleMessage(IoSession session, INewIdentifierAcknowledgement ack) throws Exception
+  @Override
+  public void accept(ISessionInfo t, INewIdentifierAcknowledgement ack)
   {
-    // TODO Auto-generated method stub
     Collection<IIdentifier> newIdentifiers = ack.getIdentifiers();
     if (LOGGER.isDebugEnabled())
       LOGGER.debug("Adding new identifiers " + newIdentifiers);
@@ -55,13 +77,13 @@ public class NewIdentifierHandler implements MessageHandler<INewIdentifierAcknow
      * to send this to
      */
     IIdentifier first = newIdentifiers.iterator().next();
-    IRequestableObjectManager manager = (IRequestableObjectManager) _objectHandler.getActualManager(first
-        .getType());
+    IRequestableObjectManager manager = (IRequestableObjectManager) _objectHandler
+        .getActualManager(first.getType());
     if (manager != null)
       manager.addFreeIdentifiers(newIdentifiers);
     else if (LOGGER.isWarnEnabled())
       LOGGER.warn("No clue who to give these identifiers to");
-    
-  }      
-    
+
+  }
+
 }

@@ -15,9 +15,9 @@ package org.commonreality.participant.impl.handlers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
-import org.commonreality.message.command.object.IObjectCommand;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.object.IObjectCommand;
+import org.commonreality.net.session.ISessionInfo;
 
 /**
  * handles both IObjectData and IObjectCommand
@@ -25,7 +25,7 @@ import org.commonreality.message.command.object.IObjectCommand;
  * @author developer
  */
 public class ObjectCommandHandler implements
-    MessageHandler<IObjectCommand>
+ IMessageHandler<IObjectCommand>
 {
   /**
    * logger definition
@@ -39,8 +39,31 @@ public class ObjectCommandHandler implements
   }
 
 
-  public void handleMessage(IoSession arg0, IObjectCommand objectCommand)
-      throws Exception
+  // public void handleMessage(IoSession arg0, IObjectCommand objectCommand)
+  // throws Exception
+  // {
+  // if (LOGGER.isDebugEnabled())
+  // LOGGER.debug(objectCommand.getType() + " : " +
+  // objectCommand.getIdentifiers());
+  // switch (objectCommand.getType())
+  // {
+  // case ADDED:
+  // _objectHandler.addObjects(objectCommand.getIdentifiers(), objectCommand);
+  // break;
+  // case REMOVED:
+  // _objectHandler.removeObjects(objectCommand.getIdentifiers(),
+  // objectCommand);
+  // break;
+  // case UPDATED:
+  // _objectHandler.updateObjects(objectCommand.getIdentifiers(),
+  // objectCommand);
+  // break;
+  // }
+  //
+  // }
+
+  @Override
+  public void accept(ISessionInfo t, IObjectCommand objectCommand)
   {
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(objectCommand.getType() + " : " +

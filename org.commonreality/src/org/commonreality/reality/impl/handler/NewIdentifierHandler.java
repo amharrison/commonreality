@@ -16,11 +16,13 @@ package org.commonreality.reality.impl.handler;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.request.object.INewIdentifierRequest;
-import org.commonreality.message.request.object.NewIdentifierAcknowledgement;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.request.object.INewIdentifierRequest;
+import org.commonreality.net.message.request.object.NewIdentifierAcknowledgement;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.impl.handlers.GeneralObjectHandler;
 import org.commonreality.reality.IReality;
 import org.commonreality.reality.impl.StateAndConnectionManager;
@@ -28,22 +30,38 @@ import org.commonreality.reality.impl.StateAndConnectionManager;
 /**
  * @author developer
  */
-public class NewIdentifierHandler extends AbstractObjectInformationHandler implements
-    MessageHandler<INewIdentifierRequest>
+public class NewIdentifierHandler extends AbstractObjectInformationHandler
+    implements IMessageHandler<INewIdentifierRequest>
 {
-  
-  
+
+  static private final Log LOGGER = LogFactory
+                                      .getLog(NewIdentifierHandler.class);
   /**
    * @param participant
    */
-  public NewIdentifierHandler(IReality reality, StateAndConnectionManager manager, GeneralObjectHandler objectHandler)
+  public NewIdentifierHandler(IReality reality,
+      StateAndConnectionManager manager, GeneralObjectHandler objectHandler)
   {
     super(reality, manager, objectHandler);
   }
 
+  // public void handleMessage(IoSession session, INewIdentifierRequest arg1)
+  // throws Exception
+  // {
+  // IIdentifier source = arg1.getSource();
+  // IReality reality = getParticipant();
+  // Collection<IIdentifier> templates = arg1.getIdentifiers();
+  // Collection<IIdentifier> ids = new ArrayList<IIdentifier>(templates.size());
+  // for (IIdentifier template : templates)
+  // ids.add(reality.newIdentifier(source, template));
+  //
+  // session.write(new NewIdentifierAcknowledgement(reality
+  // .getIdentifier(), arg1.getMessageId(), ids));
+  //
+  // }
 
-  public void handleMessage(IoSession session, INewIdentifierRequest arg1)
-      throws Exception
+  @Override
+  public void accept(ISessionInfo t, INewIdentifierRequest arg1)
   {
     IIdentifier source = arg1.getSource();
     IReality reality = getParticipant();
@@ -51,10 +69,17 @@ public class NewIdentifierHandler extends AbstractObjectInformationHandler imple
     Collection<IIdentifier> ids = new ArrayList<IIdentifier>(templates.size());
     for (IIdentifier template : templates)
       ids.add(reality.newIdentifier(source, template));
-    
-    session.write(new NewIdentifierAcknowledgement(reality
-        .getIdentifier(), arg1.getMessageId(), ids));
-    
+
+    try
+    {
+      t.write(new NewIdentifierAcknowledgement(reality.getIdentifier(), arg1
+          .getMessageId(), ids));
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Failed to write ", e);
+    }
+
   }
 
 }

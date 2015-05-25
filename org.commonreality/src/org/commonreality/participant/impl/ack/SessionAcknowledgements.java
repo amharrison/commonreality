@@ -10,12 +10,10 @@ import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.service.IoService;
-import org.apache.mina.core.service.IoServiceListener;
-import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.core.session.IoSession;
-import org.commonreality.message.IMessage;
-import org.commonreality.message.request.IAcknowledgement;
+import org.commonreality.net.message.IAcknowledgement;
+import org.commonreality.net.message.IMessage;
+import org.commonreality.net.session.ISessionInfo;
+import org.commonreality.net.session.ISessionListener;
 
 /**
  * contains session specific ack data. Many IMessages require an acknowledgment.
@@ -39,7 +37,7 @@ public class SessionAcknowledgements
   static private final transient Log                           LOGGER                  = LogFactory
                                                                                            .getLog(SessionAcknowledgements.class);
 
-  private final IoSession                                      _session;
+  private final ISessionInfo                                   _session;
 
   /**
    * map, indexed by the IMessage's id of unacknowledged Acks. Once the ack is
@@ -48,84 +46,70 @@ public class SessionAcknowledgements
   private SortedMap<Long, CompletableFuture<IAcknowledgement>> _pendingAcknowledgments = Collections
                                                                                            .synchronizedSortedMap(new TreeMap<Long, CompletableFuture<IAcknowledgement>>());
 
-  /**
-   * this should be a capacity limited map..
-   */
 
-  // private SortedMap<Long, AckFutureReference> _acknowledged = Collections
-  // .synchronizedSortedMap(new TreeMap<Long, AckFutureReference>());
+  private ISessionListener                                     _sessionListener;
 
-  // .synchronizedSortedMap(new LRUMap());
-
-  // private SortedSet<Long> _missingAcknowledgements = Collections
-  // .synchronizedSortedSet(new TreeSet<Long>());
-
-  // private int _maxMissingToRetain = 100;
-
-  private IoServiceListener                                    _sessionListener;
-
-
-
-  static public SessionAcknowledgements getSessionAcks(IoSession session)
+  static public SessionAcknowledgements getSessionAcks(ISessionInfo session)
   {
     return (SessionAcknowledgements) session
         .getAttribute(SessionAcknowledgements.class.getName());
   }
 
-  public SessionAcknowledgements(IoSession session)
+  public SessionAcknowledgements(ISessionInfo<?> session)
   {
     _session = session;
 
-    _sessionListener = new IoServiceListener() {
+    _sessionListener = new ISessionListener() {
 
-      public void sessionDestroyed(IoSession arg0) throws Exception
+      @Override
+      public void opened(ISessionInfo<?> session)
       {
-        // clean up.
-        uninstall(arg0);
+        // install(session);
       }
 
-      public void sessionCreated(IoSession arg0) throws Exception
+      @Override
+      public void destroyed(ISessionInfo<?> session)
       {
-        // noop
-
-      }
-
-      public void serviceIdle(IoService arg0, IdleStatus arg1) throws Exception
-      {
-        // noop
+        // TODO Auto-generated method stub
 
       }
 
-      public void serviceDeactivated(IoService arg0) throws Exception
+      @Override
+      public void created(ISessionInfo<?> session)
       {
-        // noop
+        // TODO Auto-generated method stub
 
       }
 
-      public void serviceActivated(IoService arg0) throws Exception
+      @Override
+      public void closed(ISessionInfo<?> session)
       {
-        // noop
-
+        uninstall(session);
       }
     };
 
     install(session);
-
   }
 
-  protected void install(IoSession session)
+  protected void install(ISessionInfo<?> session)
   {
     session.setAttribute(SessionAcknowledgements.class.getName(), this);
-    session.getService().addListener(_sessionListener);
+    session.addListener(_sessionListener);
+    session.addFilter(new AcknowledgmentIoFilter());
+
+    // session.getService().addListener(_sessionListener);
     // add the filter for handling incoming responses
-    session.getFilterChain().addLast("ackFilter", new AcknowledgmentIoFilter());
+    // session.getFilterChain().addLast("ackFilter", new
+    // AcknowledgmentIoFilter());
   }
 
-  protected void uninstall(IoSession session)
+  protected void uninstall(ISessionInfo<?> session)
   {
-    session.getService().removeListener(_sessionListener);
-    session.getFilterChain().remove("ackFilter");
-    session.removeAttribute(SessionAcknowledgements.class.getName());
+    // we could do a better job of cleaning up here..
+
+    // session.getService().removeListener(_sessionListener);
+    // session.getFilterChain().remove("ackFilter");
+    session.setAttribute(SessionAcknowledgements.class.getName(), null);
     _pendingAcknowledgments.clear();
     // _acknowledged.clear();
   }
@@ -140,53 +124,6 @@ public class SessionAcknowledgements
     return future;
   }
 
-  // public Future<IAcknowledgement> getAckFuture(long messageId)
-  // {
-  // AckFuture future = _pendingAcknowledgments.get(messageId);
-  // if (future != null) return future;
-  //
-  // AckFutureReference reference = _acknowledged.get(messageId);
-  // if (reference != null)
-  // {
-  // future = (AckFuture) reference.getFuture();
-  // if (future != null) return future;
-  //
-  // if (LOGGER.isWarnEnabled())
-  // LOGGER
-  // .warn(String
-  // .format(
-  // "(%s) Ack for %d was received, but has since been reclaimed by GC. Returning empty ack",
-  // getSession(), messageId));
-  //
-  // return new AckFuture(messageId, true);
-  // }
-  // else
-  // {
-  //
-  // if (_missingAcknowledgements.contains(messageId))
-  // if (LOGGER.isWarnEnabled())
-  // LOGGER.warn(String.format(
-  // "(%s) no acknowledgement for %d was ever receieved",
-  // getSession(), messageId));
-  //
-  // if (LOGGER.isWarnEnabled())
-  // {
-  // long oldestPending = _pendingAcknowledgments.firstKey();
-  // long youngestPending = _pendingAcknowledgments.lastKey();
-  // long oldestAcked = _acknowledged.firstKey();
-  // long youngestAcked = _acknowledged.lastKey();
-  // LOGGER
-  // .warn(String
-  // .format(
-  // "(%s) No record of messageId %d remains. pending[%d, %d] acknowledged[%d, %d]. Returning empty ack",
-  // getSession(), messageId, oldestPending, youngestPending,
-  // oldestAcked, youngestAcked));
-  // }
-  //
-  // return new AckFuture(messageId, true);
-  // }
-  // }
-
   public void acknowledgementReceived(IAcknowledgement ack)
   {
     long requestId = ack.getRequestMessageId();
@@ -199,88 +136,11 @@ public class SessionAcknowledgements
      */
     CompletableFuture<IAcknowledgement> future = _pendingAcknowledgments
         .remove(requestId);
-    if (future != null)
-    // {
-    // _acknowledged.put(requestId, new AckFutureReference(requestId, future,
-    // true));
-    // future.setAcknowledgement(ack);
-    // assuming completablefuture
-      future.complete(ack);
-    // }
+    if (future != null) future.complete(ack);
 
-    /*
-     * since this is session based, and we've received an ack, all earlier
-     * requests were clearly not responded to, and will likely never arrive.
-     */
-    // synchronized (_pendingAcknowledgments)
-    // {
-    // SortedMap<Long, AckFuture> earlierFutures = _pendingAcknowledgments
-    // .headMap(requestId);
-    // Set<Long> missing = earlierFutures.keySet();
-    //
-    // if (missing.size() > 0)
-    // {
-    // _missingAcknowledgements.addAll(missing);
-    //
-    // if (LOGGER.isDebugEnabled())
-    // LOGGER.debug(String.format(
-    // "(%s) %d unacknowledged, older acks have been expired.",
-    // getSession(), missing.size()));
-    //
-    // earlierFutures.clear();
-    // }
-    // }
-    //
-    // synchronized (_missingAcknowledgements)
-    // {
-    // while (_missingAcknowledgements.size() >= _maxMissingToRetain)
-    // _missingAcknowledgements.remove(_missingAcknowledgements.first());
-    // }
-    //
-    // /*
-    // * now we zip through the acknowledged to clear out the expired
-    // */
-    // expireGarbageAcks();
   }
 
-  /**
-   * 
-   */
-  // private void expireGarbageAcks()
-  // {
-  // int expired = 0;
-  // synchronized (_acknowledged)
-  // {
-  // int half = _acknowledged.size() / 2;
-  // Iterator<Map.Entry<Long, AckFutureReference>> itr = _acknowledged
-  // .entrySet().iterator();
-  //
-  // while (itr.hasNext() && half > 0)
-  // {
-  // half--;
-  // Map.Entry<Long, AckFutureReference> entry = itr.next();
-  // AckFutureReference reference = entry.getValue();
-  // if (reference.getFuture() == null)
-  // {
-  // itr.remove();
-  // if (LOGGER.isDebugEnabled())
-  // LOGGER.debug(String.format(
-  // "(%s) Ack for %d has been reclaimed by GC, removing",
-  // getSession(), reference.getRequestId()));
-  // expired++;
-  // }
-  // else
-  // break;
-  // }
-  // }
-  //
-  // if (expired > 0)
-  // if (LOGGER.isDebugEnabled())
-  // LOGGER.debug(String.format("(%s) Expired %d ack futures", getSession(),
-  // expired));
-  // }
-
-  public IoSession getSession()
+  public ISessionInfo<?> getSession()
   {
     return _session;
   }

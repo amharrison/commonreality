@@ -17,18 +17,18 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
-import org.commonreality.message.command.control.ControlAcknowledgement;
-import org.commonreality.message.command.control.IControlCommand;
-import org.commonreality.message.command.control.IControlCommand.State;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.control.ControlAcknowledgement;
+import org.commonreality.net.message.command.control.IControlCommand;
+import org.commonreality.net.message.command.control.IControlCommand.State;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.participant.impl.AbstractParticipant;
 
 /**
  * @author developer
  */
-public class ControlHandler implements MessageHandler<IControlCommand>
+public class ControlHandler implements IMessageHandler<IControlCommand>
 {
   /**
    * logger definition
@@ -138,8 +138,43 @@ public class ControlHandler implements MessageHandler<IControlCommand>
     }
   }
 
-  public void handleMessage(IoSession session, IControlCommand command)
-      throws Exception
+  // public void handleMessage(IoSession session, IControlCommand command)
+  // throws Exception
+  // {
+  // State state = command.getState();
+  // if (LOGGER.isDebugEnabled())
+  // LOGGER.debug("Attempting to set " + _participant + " state to " + state);
+  //
+  // try
+  // {
+  // setState(state, command.getData());
+  //
+  // if (LOGGER.isDebugEnabled())
+  // LOGGER.debug("State has been set to " + state
+  // +", acknowleding "+command.getMessageId());
+  //
+  // session.write(
+  // new ControlAcknowledgement(_participant.getIdentifier(), command
+  // .getMessageId(), state)).awaitUninterruptibly();
+  //
+  // /*
+  // * we have to acknowledge shutdown before we actually do it.
+  // */
+  // if (state == IControlCommand.State.SHUTDOWN) _participant.shutdown();
+  // }
+  // catch (Exception e)
+  // {
+  // session.write(
+  // new ControlAcknowledgement(_participant.getIdentifier(), command
+  // .getMessageId(), e)).awaitUninterruptibly();
+  // LOGGER.error("Failed to set state " + state, e);
+  // throw e;
+  // }
+  //
+  // }
+
+  @Override
+  public void accept(ISessionInfo t, IControlCommand command)
   {
     State state = command.getState();
     if (LOGGER.isDebugEnabled())
@@ -148,13 +183,13 @@ public class ControlHandler implements MessageHandler<IControlCommand>
     try
     {
       setState(state, command.getData());
-      
+
       if (LOGGER.isDebugEnabled())
-        LOGGER.debug("State has been set to " + state +", acknowleding "+command.getMessageId());
-      
-      session.write(
-          new ControlAcknowledgement(_participant.getIdentifier(), command
-              .getMessageId(), state)).awaitUninterruptibly();
+        LOGGER.debug("State has been set to " + state + ", acknowleding "
+            + command.getMessageId());
+
+      t.writeAndWait(new ControlAcknowledgement(_participant.getIdentifier(),
+          command.getMessageId(), state));
 
       /*
        * we have to acknowledge shutdown before we actually do it.
@@ -163,11 +198,18 @@ public class ControlHandler implements MessageHandler<IControlCommand>
     }
     catch (Exception e)
     {
-      session.write(
-          new ControlAcknowledgement(_participant.getIdentifier(), command
-              .getMessageId(), e)).awaitUninterruptibly();
+      try
+      {
+        t.writeAndWait(new ControlAcknowledgement(_participant.getIdentifier(),
+            command.getMessageId(), e));
+      }
+      catch (Exception e2)
+      {
+        LOGGER.error("Failed to handle exception gracefully ", e);
+      }
+
       LOGGER.error("Failed to set state " + state, e);
-      throw e;
+      throw new RuntimeException(e);
     }
 
   }

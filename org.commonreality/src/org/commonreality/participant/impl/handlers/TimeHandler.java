@@ -15,9 +15,9 @@ package org.commonreality.participant.impl.handlers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
-import org.commonreality.message.command.time.ITimeCommand;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.time.ITimeCommand;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.time.IClock;
@@ -26,7 +26,7 @@ import org.commonreality.time.impl.NetworkedClock.NetworkedAuthoritativeClock;
 /**
  * @author developer
  */
-public class TimeHandler implements MessageHandler<ITimeCommand>
+public class TimeHandler implements IMessageHandler<ITimeCommand>
 {
   /**
    * logger definition
@@ -40,9 +40,35 @@ public class TimeHandler implements MessageHandler<ITimeCommand>
     _participant = participant;
   }
 
-  public void handleMessage(IoSession arg0, ITimeCommand time) throws Exception
-  {
+  // public void handleMessage(IoSession arg0, ITimeCommand time) throws
+  // Exception
+  // {
+  //
+  // IClock clock = _participant.getClock();
+  // NetworkedAuthoritativeClock auth = (NetworkedAuthoritativeClock) clock
+  // .getAuthority().get();
+  //
+  // if (LOGGER.isDebugEnabled())
+  // LOGGER.debug("Got a time command for " + time.getTime() + " setting");
+  //
+  // /*
+  // * time arrived is global.
+  // */
+  // AbstractParticipant.getPeriodicExecutor().execute(
+  // () -> auth.timeChangeReceived(time.getTime()));
+  //
+  // // if (clock instanceof INetworkedClock)
+  // // {
+  // // if (LOGGER.isDebugEnabled())
+  // // LOGGER.debug("Got a time command for " + time.getTime() + " setting");
+  // // ((INetworkedClock) clock).setCurrentTimeCommand(time);
+  // // }
+  //
+  // }
 
+  @Override
+  public void accept(ISessionInfo t, ITimeCommand time)
+  {
     IClock clock = _participant.getClock();
     NetworkedAuthoritativeClock auth = (NetworkedAuthoritativeClock) clock
         .getAuthority().get();
@@ -53,15 +79,12 @@ public class TimeHandler implements MessageHandler<ITimeCommand>
     /*
      * time arrived is global.
      */
+    /*
+     * we can pull this off of the periodic once we've confirmed Netty's
+     * behavior
+     */
     AbstractParticipant.getPeriodicExecutor().execute(
         () -> auth.timeChangeReceived(time.getTime()));
-
-    // if (clock instanceof INetworkedClock)
-    // {
-    // if (LOGGER.isDebugEnabled())
-    // LOGGER.debug("Got a time command for " + time.getTime() + " setting");
-    // ((INetworkedClock) clock).setCurrentTimeCommand(time);
-    // }
 
   }
 

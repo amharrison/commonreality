@@ -17,12 +17,12 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.command.object.ObjectData;
-import org.commonreality.message.impl.BaseAcknowledgementMessage;
-import org.commonreality.message.request.object.IObjectDataRequest;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.object.ObjectData;
+import org.commonreality.net.message.impl.BaseAcknowledgementMessage;
+import org.commonreality.net.message.request.object.IObjectDataRequest;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.object.delta.IObjectDelta;
 import org.commonreality.participant.impl.handlers.GeneralObjectHandler;
 import org.commonreality.reality.IReality;
@@ -31,26 +31,30 @@ import org.commonreality.reality.impl.StateAndConnectionManager;
 /**
  * @author developer
  */
-public class ObjectDataHandler extends AbstractObjectInformationHandler implements
-    MessageHandler<IObjectDataRequest>
+public class ObjectDataHandler extends AbstractObjectInformationHandler
+    implements IMessageHandler<IObjectDataRequest>
 {
   /**
    * logger definition
    */
   static private final Log LOGGER = LogFactory.getLog(ObjectDataHandler.class);
-  
 
   /**
    * @param participant
    */
-  public ObjectDataHandler(IReality reality, StateAndConnectionManager manager, GeneralObjectHandler objectHandler)
+  public ObjectDataHandler(IReality reality, StateAndConnectionManager manager,
+      GeneralObjectHandler objectHandler)
   {
     super(reality, manager, objectHandler);
   }
 
+  // public void handleMessage(IoSession session, IObjectDataRequest arg1)
+  // throws Exception
+  // {
+  // }
 
-  public void handleMessage(IoSession session, IObjectDataRequest arg1)
-      throws Exception
+  @Override
+  public void accept(ISessionInfo session, IObjectDataRequest arg1)
   {
     IIdentifier from = arg1.getSource();
     IIdentifier to = arg1.getDestination();
@@ -73,11 +77,18 @@ public class ObjectDataHandler extends AbstractObjectInformationHandler implemen
      * everyone, should we send this? when data is sent to all (such as a
      * RealObject), the sender will get two copies - this is not correct
      */
-    session.write(new BaseAcknowledgementMessage(reality.getIdentifier(),
-        arg1.getMessageId()));
+    try
+    {
+      session.write(new BaseAcknowledgementMessage(reality.getIdentifier(),
+          arg1.getMessageId()));
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Failed to send ack", e);
+    }
 
-    
     reality.send(to, new ObjectData(reality.getIdentifier(), data));
+
   }
 
 }

@@ -18,13 +18,13 @@ import java.util.Collections;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.command.object.IObjectCommand;
-import org.commonreality.message.command.object.ObjectCommand;
-import org.commonreality.message.impl.BaseAcknowledgementMessage;
-import org.commonreality.message.request.object.IObjectCommandRequest;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.object.IObjectCommand;
+import org.commonreality.net.message.command.object.ObjectCommand;
+import org.commonreality.net.message.impl.BaseAcknowledgementMessage;
+import org.commonreality.net.message.request.object.IObjectCommandRequest;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.object.IMutableObject;
 import org.commonreality.object.ISensorObject;
@@ -37,7 +37,7 @@ import org.commonreality.reality.impl.StateAndConnectionManager;
  * @author developer
  */
 public class ObjectCommandHandler extends AbstractObjectInformationHandler
-    implements MessageHandler<IObjectCommandRequest>
+    implements IMessageHandler<IObjectCommandRequest>
 {
   /**
    * logger definition
@@ -54,8 +54,13 @@ public class ObjectCommandHandler extends AbstractObjectInformationHandler
     super(reality, manager, objectHandler);
   }
 
-  public void handleMessage(IoSession session, IObjectCommandRequest arg1)
-      throws Exception
+  public Collection<IObjectDelta> getPendingData(IIdentifier pendingId)
+  {
+    return getObjectHandler().getPendingData(pendingId);
+  }
+
+  @Override
+  public void accept(ISessionInfo session, IObjectCommandRequest arg1)
   {
     IIdentifier from = arg1.getSource();
     IIdentifier to = arg1.getDestination();
@@ -88,8 +93,15 @@ public class ObjectCommandHandler extends AbstractObjectInformationHandler
     /*
      * always send ack
      */
-    session.write( new BaseAcknowledgementMessage(reality.getIdentifier(),
-        arg1.getMessageId()));
+    try
+    {
+      session.write(new BaseAcknowledgementMessage(reality.getIdentifier(),
+          arg1.getMessageId()));
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Failed to send ack", e);
+    }
 
     IObjectCommand command = new ObjectCommand(reality.getIdentifier(), type,
         identifiers);
@@ -122,11 +134,6 @@ public class ObjectCommandHandler extends AbstractObjectInformationHandler
         }
     }
 
-  }
-
-  public Collection<IObjectDelta> getPendingData(IIdentifier pendingId)
-  {
-    return getObjectHandler().getPendingData(pendingId);
   }
 
 }

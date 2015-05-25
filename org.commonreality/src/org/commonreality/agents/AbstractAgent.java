@@ -22,11 +22,11 @@ import org.commonreality.efferent.IEfferentCommand;
 import org.commonreality.efferent.IEfferentCommandManager;
 import org.commonreality.executor.InlineExecutor;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.command.object.IObjectCommand;
-import org.commonreality.message.credentials.ICredentials;
-import org.commonreality.message.request.object.ObjectCommandRequest;
-import org.commonreality.message.request.object.ObjectDataRequest;
-import org.commonreality.message.request.time.RequestTime;
+import org.commonreality.net.message.command.object.IObjectCommand;
+import org.commonreality.net.message.credentials.ICredentials;
+import org.commonreality.net.message.request.object.ObjectCommandRequest;
+import org.commonreality.net.message.request.object.ObjectDataRequest;
+import org.commonreality.net.message.request.time.RequestTime;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.object.ISensorObject;
 import org.commonreality.object.delta.FullObjectDelta;
@@ -81,7 +81,7 @@ public abstract class AbstractAgent extends AbstractParticipant implements
   abstract public String getName();
 
   /**
-   * @see org.commonreality.agents.IAgent#setCredentials(org.commonreality.message.credentials.ICredentials)
+   * @see org.commonreality.agents.IAgent#setCredentials(org.commonreality.net.message.credentials.ICredentials)
    */
   public void setCredentials(ICredentials credentials)
   {
@@ -217,10 +217,16 @@ public abstract class AbstractAgent extends AbstractParticipant implements
      * tell everyone what I am like..
      */
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Notifying CR about myself");
-    send(new ObjectDataRequest(identifier, IIdentifier.ALL,
-        Collections.singleton(new FullObjectDelta(agent))));
-    send(new ObjectCommandRequest(identifier, IIdentifier.ALL,
-        IObjectCommand.Type.ADDED, Collections.singleton(identifier)));
+    if (getSession() != null)
+    {
+      send(new ObjectDataRequest(identifier, IIdentifier.ALL,
+          Collections.singleton(new FullObjectDelta(agent))));
+      send(new ObjectCommandRequest(identifier, IIdentifier.ALL,
+          IObjectCommand.Type.ADDED, Collections.singleton(identifier)));
+    }
+    else if (LOGGER.isWarnEnabled())
+      LOGGER
+          .warn(String.format("Session is null but we have received our ID?"));
   }
 
   @Override
@@ -229,8 +235,12 @@ public abstract class AbstractAgent extends AbstractParticipant implements
     /*
      * send out the remove command for ourselves
      */
-    send(new ObjectCommandRequest(getIdentifier(), IIdentifier.ALL,
-        IObjectCommand.Type.REMOVED, Collections.singleton(getIdentifier())));
+    if (getSession() != null)
+      send(new ObjectCommandRequest(getIdentifier(), IIdentifier.ALL,
+          IObjectCommand.Type.REMOVED, Collections.singleton(getIdentifier())));
+    else if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Shutdown but not connected?"));
+
     super.shutdown();
   }
 
@@ -240,9 +250,9 @@ public abstract class AbstractAgent extends AbstractParticipant implements
     super.connect();
     IClock clock = new NetworkedClock(0.05, (requestedTime, netClock) -> {
       // clock time is local, but network is global.
-      double timeShift = netClock.getAuthority().get().getLocalTimeShift();
-      send(new RequestTime(getIdentifier(), requestedTime - timeShift));
-    });
+        double timeShift = netClock.getAuthority().get().getLocalTimeShift();
+        send(new RequestTime(getIdentifier(), requestedTime - timeShift));
+      });
     setClock(clock);
     CommonReality.addAgent(this);
   }

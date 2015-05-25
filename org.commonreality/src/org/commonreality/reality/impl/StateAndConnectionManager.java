@@ -18,19 +18,19 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
 import org.commonreality.efferent.IEfferentCommand;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.command.control.ControlCommand;
-import org.commonreality.message.command.control.IControlAcknowledgement;
-import org.commonreality.message.command.control.IControlCommand;
-import org.commonreality.message.command.object.IObjectCommand;
-import org.commonreality.message.command.object.ObjectCommand;
-import org.commonreality.message.command.object.ObjectData;
-import org.commonreality.message.credentials.ICredentials;
-import org.commonreality.message.request.IAcknowledgement;
-import org.commonreality.message.request.connect.ConnectionAcknowledgment;
-import org.commonreality.message.request.connect.IConnectionRequest;
+import org.commonreality.net.message.IAcknowledgement;
+import org.commonreality.net.message.command.control.ControlCommand;
+import org.commonreality.net.message.command.control.IControlAcknowledgement;
+import org.commonreality.net.message.command.control.IControlCommand;
+import org.commonreality.net.message.command.object.IObjectCommand;
+import org.commonreality.net.message.command.object.ObjectCommand;
+import org.commonreality.net.message.command.object.ObjectData;
+import org.commonreality.net.message.credentials.ICredentials;
+import org.commonreality.net.message.request.connect.ConnectionAcknowledgment;
+import org.commonreality.net.message.request.connect.IConnectionRequest;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.object.IAfferentObject;
 import org.commonreality.object.IEfferentObject;
 import org.commonreality.object.IRealObject;
@@ -64,53 +64,53 @@ public class StateAndConnectionManager
   /**
    * Logger definition
    */
-  static private final transient Log     LOGGER                  = LogFactory
-                                                                     .getLog(StateAndConnectionManager.class);
+  static private final transient Log        LOGGER                  = LogFactory
+                                                                        .getLog(StateAndConnectionManager.class);
 
-  static private final String            CREDENTIALS             = StateAndConnectionManager.class
-                                                                     .getName()
-                                                                     + ".credentials";
+  static private final String               CREDENTIALS             = StateAndConnectionManager.class
+                                                                        .getName()
+                                                                        + ".credentials";
 
-  static private final String            IDENTIFIER              = StateAndConnectionManager.class
-                                                                     .getName()
-                                                                     + ".identifier";
+  static private final String               IDENTIFIER              = StateAndConnectionManager.class
+                                                                        .getName()
+                                                                        + ".identifier";
 
-  private TrackedReadWriteLock           _lock                   = new TrackedReadWriteLock();
+  private TrackedReadWriteLock              _lock                   = new TrackedReadWriteLock();
 
-  private IReality                       _reality;
+  private IReality                          _reality;
 
-  private long                           _acknowledgementTimeout = 2000;
+  private long                              _acknowledgementTimeout = 2000;
 
   /**
    * sessions keyed by id
    */
-  private Map<IIdentifier, IoSession>    _activeParticipantSessions;
+  private Map<IIdentifier, ISessionInfo<?>> _activeParticipantSessions;
 
-  private Map<IIdentifier, IoSession>    _pendingParticipantSessions;
+  private Map<IIdentifier, ISessionInfo<?>> _pendingParticipantSessions;
 
   /**
    * id keyed by credentials
    */
-  private Map<ICredentials, IIdentifier> _activeParticipantCredentials;
+  private Map<ICredentials, IIdentifier>    _activeParticipantCredentials;
 
   /**
    * credentials of participants that will be allowed to participant if we
    * aren't running promiscuous
    */
-  private Set<ICredentials>              _validCredentials;
+  private Set<ICredentials>                 _validCredentials;
 
   /**
    * credentails of participants that have been connected but not yet accepted
    */
-  private Set<ICredentials>              _pendingCredentials;
+  private Set<ICredentials>                 _pendingCredentials;
 
-  private boolean                        _isPromiscuous          = false;
+  private boolean                           _isPromiscuous          = false;
 
   /**
    * the credentials of the unique clock owner, if there is one. otherwise all
    * participants share in the ownership
    */
-  private ICredentials                   _clockOwnerCredentials;
+  private ICredentials                      _clockOwnerCredentials;
 
   /**
    * this is the executor that will monitor the control acknowledgements during
@@ -118,13 +118,13 @@ public class StateAndConnectionManager
    * connected,accepted methods since they are called on the io processing
    * thread for that participant (i.e. it can never get the acknowledgement
    */
-  private Executor                       _centralExecutor;
+  private Executor                          _centralExecutor;
 
   public StateAndConnectionManager(IReality reality, Executor executor)
   {
     _reality = reality;
-    _activeParticipantSessions = new HashMap<IIdentifier, IoSession>();
-    _pendingParticipantSessions = new HashMap<IIdentifier, IoSession>();
+    _activeParticipantSessions = new HashMap<IIdentifier, ISessionInfo<?>>();
+    _pendingParticipantSessions = new HashMap<IIdentifier, ISessionInfo<?>>();
     _activeParticipantCredentials = new HashMap<ICredentials, IIdentifier>();
     _validCredentials = new HashSet<ICredentials>();
     _pendingCredentials = new HashSet<ICredentials>();
@@ -239,7 +239,7 @@ public class StateAndConnectionManager
       IIdentifier revokedParticipant = getActiveParticipant(credentials);
       if (revokedParticipant == null) return;
 
-      IoSession session = getParticipantSession(revokedParticipant);
+      ISessionInfo<?> session = getParticipantSession(revokedParticipant);
       if (session == null) return;
 
       if (LOGGER.isDebugEnabled())
@@ -250,7 +250,14 @@ public class StateAndConnectionManager
        * this will trigger the close notification, which will ultimately trigger
        * participantDisconnceted()
        */
-      session.close();
+      try
+      {
+        session.close();
+      }
+      catch (Exception e)
+      {
+        LOGGER.error("Failed to close session ", e);
+      }
     }
   }
 
@@ -319,10 +326,11 @@ public class StateAndConnectionManager
    * @param container
    * @return
    */
-  public Collection<IoSession> getActiveSessions(Collection<IoSession> container)
+  public Collection<ISessionInfo<?>> getActiveSessions(
+      Collection<ISessionInfo<?>> container)
   {
     if (container == null)
-      container = new ArrayList<IoSession>(Math.max(1,
+      container = new ArrayList<ISessionInfo<?>>(Math.max(1,
           _activeParticipantSessions.size()));
 
     try
@@ -363,7 +371,7 @@ public class StateAndConnectionManager
    * otherwise it will return null, signaling that the participant has
    * disconnected.
    */
-  public IoSession getParticipantSession(IIdentifier participantId)
+  public ISessionInfo<?> getParticipantSession(IIdentifier participantId)
   {
     try
     {
@@ -376,7 +384,7 @@ public class StateAndConnectionManager
     }
   }
 
-  public IoSession getPendingParticipantSession(IIdentifier participantId)
+  public ISessionInfo<?> getPendingParticipantSession(IIdentifier participantId)
   {
     try
     {
@@ -389,12 +397,12 @@ public class StateAndConnectionManager
     }
   }
 
-  public IIdentifier getParticipantIdentifier(IoSession session)
+  public IIdentifier getParticipantIdentifier(ISessionInfo<?> session)
   {
     return (IIdentifier) session.getAttribute(IDENTIFIER);
   }
 
-  public ICredentials getParticipantCredentials(IoSession session)
+  public ICredentials getParticipantCredentials(ISessionInfo<?> session)
   {
     return (ICredentials) session.getAttribute(CREDENTIALS);
   }
@@ -450,7 +458,7 @@ public class StateAndConnectionManager
 
     for (IIdentifier identifier : participants)
     {
-      IoSession session = getParticipantSession(identifier);
+      ISessionInfo<?> session = getParticipantSession(identifier);
 
       if (session == null)
       {
@@ -558,7 +566,7 @@ public class StateAndConnectionManager
    * @param addressing
    * @return
    */
-  protected boolean isAddressingInfoValid(IoSession session,
+  protected boolean isAddressingInfoValid(ISessionInfo<?> session,
       IAddressingInformation addressing)
   {
     return true;
@@ -574,7 +582,7 @@ public class StateAndConnectionManager
    * time, {@link #acceptParticipant()} will be called<br>
    * <br>
    */
-  public void participantConnected(final IoSession session,
+  public void participantConnected(final ISessionInfo<?> session,
       IConnectionRequest request)
   {
     if (LOGGER.isDebugEnabled())
@@ -593,10 +601,13 @@ public class StateAndConnectionManager
        */
       if (!credentialsAreValid(credentials))
       {
-        session.write(
-            new ConnectionAcknowledgment(_reality.getIdentifier(), request
-                .getMessageId(), "Invalid credentials")).awaitUninterruptibly();
-        session.close(false);
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Credential are invalid. Rejecting %s",
+              session));
+
+        session.writeAndWait(new ConnectionAcknowledgment(_reality
+            .getIdentifier(), request.getMessageId(), "Invalid credentials"));
+        session.close();
         return;
       }
 
@@ -606,11 +617,14 @@ public class StateAndConnectionManager
       if (_activeParticipantCredentials.containsKey(credentials)
           || _pendingCredentials.contains(credentials))
       {
-        session.write(
-            new ConnectionAcknowledgment(_reality.getIdentifier(), request
-                .getMessageId(), "Credentials already in use"))
-            .awaitUninterruptibly();
-        session.close(false);
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format(
+              "Credentials are already in use. Rejecing %s", session));
+
+        session.writeAndWait(new ConnectionAcknowledgment(_reality
+            .getIdentifier(), request.getMessageId(),
+            "Credentials already in use"));
+        session.close();
         return;
       }
 
@@ -620,11 +634,13 @@ public class StateAndConnectionManager
        */
       if (!isAddressingInfoValid(session, addressing))
       {
-        session.write(
-            new ConnectionAcknowledgment(_reality.getIdentifier(), request
-                .getMessageId(), "Addressing spoof detected"))
-            .awaitUninterruptibly();
-        session.close(false);
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Spoofing?. Rejecing %s", session));
+
+        session.writeAndWait(new ConnectionAcknowledgment(_reality
+            .getIdentifier(), request.getMessageId(),
+            "Addressing spoof detected"));
+        session.close();
         return;
       }
 
@@ -633,13 +649,14 @@ public class StateAndConnectionManager
        */
       if (_reality.getState() == IParticipant.State.STOPPED)
       {
-        session
-            .write(
-                new ConnectionAcknowledgment(_reality.getIdentifier(), request
-                    .getMessageId(),
-                    "Simulation has already stopped, cannot accept new connections"))
-            .awaitUninterruptibly();
-        session.close(false);
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Simulation already stopped. Rejecing %s",
+              session));
+
+        session.writeAndWait(new ConnectionAcknowledgment(_reality
+            .getIdentifier(), request.getMessageId(),
+            "Simulation has already stopped, cannot accept new connections"));
+        session.close();
       }
 
       /*
@@ -668,6 +685,18 @@ public class StateAndConnectionManager
       session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
           request.getMessageId(), "Granted", identifier));
     }
+    catch (Exception e)
+    {
+      try
+      {
+        LOGGER.error("Exception while accepting connection, closing", e);
+        session.close();
+      }
+      catch (Exception e2)
+      {
+        LOGGER.error("Failed to fail gracefully ", e);
+      }
+    }
     finally
     {
       _lock.writeLock().unlock();
@@ -679,7 +708,7 @@ public class StateAndConnectionManager
    * them to the simulation and make sure its state is consistent with the
    * simulations
    */
-  public boolean acceptParticipant(final IoSession session,
+  public boolean acceptParticipant(final ISessionInfo<?> session,
       ISimulationObject object, ObjectCommandHandler objectHandler)
   {
     final IIdentifier identifier = getParticipantIdentifier(session);
@@ -738,16 +767,21 @@ public class StateAndConnectionManager
           Collection<IObjectDelta> data = objectHandler
               .getPendingData(pendingId);
           if (data.size() != 0)
-          {
-            if (LOGGER.isDebugEnabled())
-              LOGGER
-                  .debug("Received object data for "
-                      + pendingId
-                      + ", but no add command. "
-                      + identifier
-                      + " did not receive data since it was pending too. Forwarding object data");
-            session.write(new ObjectData(_reality.getIdentifier(), data));
-          }
+            try
+            {
+              if (LOGGER.isDebugEnabled())
+                LOGGER
+                    .debug("Received object data for "
+                        + pendingId
+                        + ", but no add command. "
+                        + identifier
+                        + " did not receive data since it was pending too. Forwarding object data");
+              session.write(new ObjectData(_reality.getIdentifier(), data));
+            }
+            catch (Exception e)
+            {
+              LOGGER.error(String.format("Failed to forward object data"), e);
+            }
         }
 
       /*
@@ -806,67 +840,6 @@ public class StateAndConnectionManager
           startClientIfNecessary(identifier, session);
           suspendClientIfNecessary(identifier, session);
 
-          // /*
-          // * has it ack the initialization?
-          // */
-          // IControlAcknowledgement controlAck = (IControlAcknowledgement)
-          // finalInitAck
-          // .get(getAcknowledgementTimeout(), TimeUnit.MILLISECONDS);
-          //
-          // if (controlAck.getState() != IControlCommand.State.INITIALIZE)
-          // throw new IllegalStateException("participant " + identifier
-          // + " did not initialize : " + controlAck.getState()
-          // + ", disconnecting");
-          //
-          // if (LOGGER.isDebugEnabled())
-          // LOGGER.debug(identifier + " has initialized");
-          //
-          // /*
-          // * now we need to check our state and set theirs accordingly...
-          // */
-          // if (_reality.stateMatches(IParticipant.State.STARTED,
-          // IParticipant.State.SUSPENDED))
-          // {
-          // if (LOGGER.isDebugEnabled())
-          // LOGGER.debug("Requesting " + identifier + " start");
-          //
-          // IControlCommand.State state = ((IControlAcknowledgement) _reality
-          // .send(
-          // session,
-          // new ControlCommand(_reality.getIdentifier(),
-          // IControlCommand.State.START)).get(
-          // getAcknowledgementTimeout(), TimeUnit.MILLISECONDS))
-          // .getState();
-          //
-          // if (state != IControlCommand.State.START)
-          // throw new IllegalStateException("participant " + identifier
-          // + " did not start : " + state + ", disconnecting");
-          //
-          // if (LOGGER.isDebugEnabled())
-          // LOGGER.debug(identifier + " has started");
-          // }
-          //
-          // if (_reality.stateMatches(IParticipant.State.SUSPENDED))
-          // {
-          // if (LOGGER.isDebugEnabled())
-          // LOGGER.debug("Requesting " + identifier + " suspend");
-          //
-          // IControlCommand.State state = ((IControlAcknowledgement) _reality
-          // .send(
-          // session,
-          // new ControlCommand(_reality.getIdentifier(),
-          // IControlCommand.State.SUSPEND)).get(
-          // getAcknowledgementTimeout(), TimeUnit.MILLISECONDS))
-          // .getState();
-          //
-          // if (state != IControlCommand.State.SUSPEND)
-          // throw new IllegalStateException("participant " + identifier
-          // + " not suspend : " + state + ", disconnecting");
-          //
-          // if (LOGGER.isDebugEnabled())
-          // LOGGER.debug(identifier + " has suspended");
-          // }
-
         }
         // catch (TimeoutException e)
         // {
@@ -885,7 +858,14 @@ public class StateAndConnectionManager
         finally
         {
           _lock.readLock().unlock();
-          if (disconnect) session.close(false);
+          if (disconnect) try
+          {
+            session.close();
+          }
+          catch (Exception e)
+          {
+            LOGGER.error("Failed to close connection ", e);
+          }
         }
       }
     };
@@ -927,7 +907,8 @@ public class StateAndConnectionManager
    * @param client
    * @return true if all is good. false if we should disconnect
    */
-  protected boolean startClientIfNecessary(IIdentifier client, IoSession session)
+  protected boolean startClientIfNecessary(IIdentifier client,
+      ISessionInfo<?> session)
   {
     try
     {
@@ -963,7 +944,7 @@ public class StateAndConnectionManager
   }
 
   protected boolean suspendClientIfNecessary(IIdentifier client,
-      IoSession session)
+      ISessionInfo<?> session)
   {
     try
     {
@@ -996,7 +977,7 @@ public class StateAndConnectionManager
   /**
    * called when a participant leaves the simulation, cleanly or not
    */
-  public IIdentifier participantDisconnected(IoSession session)
+  public IIdentifier participantDisconnected(ISessionInfo<?> session)
   {
     IIdentifier identifier = getParticipantIdentifier(session);
     ICredentials credentials = getParticipantCredentials(session);
@@ -1013,8 +994,8 @@ public class StateAndConnectionManager
     {
       _lock.writeLock().lock();
 
-      session.setAttribute(CREDENTIALS);
-      session.setAttribute(IDENTIFIER);
+      session.setAttribute(CREDENTIALS, null);
+      session.setAttribute(IDENTIFIER, null);
 
       _pendingCredentials.remove(credentials);
 
@@ -1194,7 +1175,8 @@ public class StateAndConnectionManager
 
   @SuppressWarnings("unchecked")
   private Collection<IIdentifier> sendObjectInformation(
-      IObjectManager objectManager, IoSession session, IIdentifier participantId)
+      IObjectManager objectManager, ISessionInfo<?> session,
+      IIdentifier participantId)
   {
 
     Collection<IIdentifier> identifiers = new HashSet<IIdentifier>();
@@ -1207,11 +1189,18 @@ public class StateAndConnectionManager
       data.add(new FullObjectDelta(objectManager.get(id)));
 
     if (data.size() != 0)
-    {
-      session.write(new ObjectData(_reality.getIdentifier(), data));
-      session.write(new ObjectCommand(_reality.getIdentifier(),
-          IObjectCommand.Type.ADDED, identifiers));
-    }
+      try
+      {
+        session.write(new ObjectData(_reality.getIdentifier(), data));
+        session.write(new ObjectCommand(_reality.getIdentifier(),
+            IObjectCommand.Type.ADDED, identifiers));
+      }
+      catch (Exception e)
+      {
+        LOGGER.error(
+            String.format("Failed to send object info to %s ", participantId),
+            e);
+      }
 
     return identifiers;
   }

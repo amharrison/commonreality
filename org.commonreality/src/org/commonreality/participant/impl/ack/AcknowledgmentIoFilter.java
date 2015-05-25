@@ -5,11 +5,11 @@ package org.commonreality.participant.impl.ack;
  */
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.commonreality.message.request.IAcknowledgement;
+import org.commonreality.net.filter.IMessageFilter;
+import org.commonreality.net.message.IAcknowledgement;
+import org.commonreality.net.session.ISessionInfo;
 
-public class AcknowledgmentIoFilter extends
-    org.apache.mina.core.filterchain.IoFilterAdapter
+public class AcknowledgmentIoFilter implements IMessageFilter
 {
   /**
    * Logger definition
@@ -18,28 +18,32 @@ public class AcknowledgmentIoFilter extends
                                                 .getLog(AcknowledgmentIoFilter.class);
 
   @Override
-  public void messageReceived(NextFilter nextFilter, IoSession session,
-      Object message) throws Exception
+  public boolean accept(ISessionInfo session, Object message)
   {
-
-    if (message instanceof IAcknowledgement)
+    try
     {
-      IAcknowledgement ackMsg = (IAcknowledgement) message;
-      long requestId = ackMsg.getRequestMessageId();
-      SessionAcknowledgements sessionAcks = SessionAcknowledgements
-          .getSessionAcks(session);
-
-      if (sessionAcks != null)
+      if (message instanceof IAcknowledgement)
       {
-        if (LOGGER.isDebugEnabled())
-          LOGGER.debug(String.format("(%s) request %d acknowledged by %s ",
-              session, requestId, ackMsg));
+        IAcknowledgement ackMsg = (IAcknowledgement) message;
+        long requestId = ackMsg.getRequestMessageId();
+        SessionAcknowledgements sessionAcks = SessionAcknowledgements
+            .getSessionAcks(session);
 
-        sessionAcks.acknowledgementReceived(ackMsg);
+        if (sessionAcks != null)
+        {
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("(%s) request %d acknowledged by %s ",
+                session, requestId, ackMsg));
+
+          sessionAcks.acknowledgementReceived(ackMsg);
+        }
+
       }
-
     }
-
-    super.messageReceived(nextFilter, session, message);
+    catch (Exception e)
+    {
+      LOGGER.error("Failed filtering ", e);
+    }
+    return true;
   }
 }

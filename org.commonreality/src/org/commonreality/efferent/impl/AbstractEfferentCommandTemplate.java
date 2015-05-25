@@ -8,10 +8,8 @@ import org.commonreality.efferent.IEfferentCommand;
 import org.commonreality.efferent.IEfferentCommandManager;
 import org.commonreality.efferent.IEfferentCommandTemplate;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.modalities.motor.MotorUtilities;
 import org.commonreality.object.IEfferentObject;
 import org.commonreality.object.manager.IRequestableObjectManager;
-import org.commonreality.sensors.keyboard.PressCommand;
 
 public abstract class AbstractEfferentCommandTemplate<E extends IEfferentCommand> implements
     IEfferentCommandTemplate<E>

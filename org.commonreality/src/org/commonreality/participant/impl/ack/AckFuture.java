@@ -5,7 +5,7 @@ package org.commonreality.participant.impl.ack;
  */
 import java.util.concurrent.FutureTask;
 
-import org.commonreality.message.request.IAcknowledgement;
+import org.commonreality.net.message.IAcknowledgement;
 
 /**
  * deprecated in favor of CompletableFuture

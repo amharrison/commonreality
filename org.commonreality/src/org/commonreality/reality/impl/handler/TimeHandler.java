@@ -15,11 +15,11 @@ package org.commonreality.reality.impl.handler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.impl.BaseAcknowledgementMessage;
-import org.commonreality.message.request.time.IRequestTime;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.impl.BaseAcknowledgementMessage;
+import org.commonreality.net.message.request.time.IRequestTime;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.reality.IReality;
 import org.commonreality.time.IAuthoritativeClock;
@@ -28,7 +28,7 @@ import org.commonreality.time.IClock;
 /**
  * @author developer
  */
-public class TimeHandler implements MessageHandler<IRequestTime>
+public class TimeHandler implements IMessageHandler<IRequestTime>
 {
   /**
    * logger definition
@@ -42,15 +42,29 @@ public class TimeHandler implements MessageHandler<IRequestTime>
     _reality = reality;
   }
 
+  // public void handleMessage(IoSession arg0, IRequestTime timeRequest) throws
+  // Exception
+  // {
+  // }
 
-  public void handleMessage(IoSession arg0, IRequestTime timeRequest) throws Exception
+  @Override
+  public void accept(ISessionInfo session, IRequestTime timeRequest)
   {
+
     IIdentifier id = timeRequest.getSource();
 
     /*
      * ack out of good form
      */
-    arg0.write(new BaseAcknowledgementMessage(id, timeRequest.getMessageId()));
+    try
+    {
+      session.write(new BaseAcknowledgementMessage(id, timeRequest
+          .getMessageId()));
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Failed to send ack", e);
+    }
 
     double when = timeRequest.getTime();
     if (LOGGER.isDebugEnabled())
@@ -65,14 +79,22 @@ public class TimeHandler implements MessageHandler<IRequestTime>
        * threads, else where potentially creating a deadlock scneario.
        * Particularly if using the noop transport
        */
+      /*
+       * we can move this off exectuor on confirmation of Nettys good behavior
+       */
       AbstractParticipant.getPeriodicExecutor().execute(
           () -> auth.requestAndWaitForTime(when, id));
     }
-    catch(IllegalArgumentException iae)
+    catch (IllegalArgumentException iae)
     {
-      if(LOGGER.isInfoEnabled())
-        LOGGER.info(id+" was not a recognized clock owner, perhaps it was received after shutdown commenced? ",iae);
+      if (LOGGER.isInfoEnabled())
+        LOGGER
+            .info(
+                id
+                    + " was not a recognized clock owner, perhaps it was received after shutdown commenced? ",
+                iae);
     }
+
   }
 
 }

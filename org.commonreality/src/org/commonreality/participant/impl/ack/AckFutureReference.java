@@ -8,7 +8,7 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.Future;
 
-import org.commonreality.message.request.IAcknowledgement;
+import org.commonreality.net.message.IAcknowledgement;
 
 /**
  * deprecated in favor of CompletableFuture

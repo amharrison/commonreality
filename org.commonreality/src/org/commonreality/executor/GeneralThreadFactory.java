@@ -42,13 +42,10 @@ public class GeneralThreadFactory implements ThreadFactory
   {
     _nameTemplate = nameTemplate;
 
-    if (_useThreadGroups)
-    {
-      if (parentGroup != null)
-        _group = new ThreadGroup(parentGroup, _nameTemplate);
-      else
-        _group = new ThreadGroup(_nameTemplate);
-    }
+    if (_useThreadGroups) if (parentGroup != null)
+      _group = new ThreadGroup(parentGroup, _nameTemplate);
+    else
+      _group = new ThreadGroup(_nameTemplate);
 
     _membershipMap = new WeakHashMap<Thread, Boolean>();
   }

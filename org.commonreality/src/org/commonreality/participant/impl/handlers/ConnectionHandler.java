@@ -15,16 +15,17 @@ package org.commonreality.participant.impl.handlers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.request.connect.IConnectionAcknowledgement;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.request.connect.IConnectionAcknowledgement;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.impl.AbstractParticipant;
 
 /**
  * @author developer
  */
-public class ConnectionHandler implements MessageHandler<IConnectionAcknowledgement>
+public class ConnectionHandler implements
+    IMessageHandler<IConnectionAcknowledgement>
 {
   /**
    * logger definition
@@ -39,23 +40,21 @@ public class ConnectionHandler implements MessageHandler<IConnectionAcknowledgem
     _participant = participant;
   }
 
-
-
-  public void handleMessage(IoSession session, IConnectionAcknowledgement ack)
-      throws Exception
+  @Override
+  public void accept(ISessionInfo t, IConnectionAcknowledgement ack)
   {
     IIdentifier id = ack.getAssignedIdentifier();
-    
+
     _participant.setCommonRealityIdentifier(ack.getSource());
-    
+
     if (LOGGER.isDebugEnabled())
       LOGGER.debug("Got connection acknowledgement, our id : " + id);
-    
+
     if (_participant.getIdentifier() != null)
       if (LOGGER.isWarnEnabled())
         LOGGER
-        .warn("We already have a valid identifier, but we got an acknowledgment anyway?");
-    
+            .warn("We already have a valid identifier, but we got an acknowledgment anyway?");
+
     /*
      * if id is null, we're about to crap out..
      */
@@ -63,12 +62,44 @@ public class ConnectionHandler implements MessageHandler<IConnectionAcknowledgem
     {
       if (LOGGER.isWarnEnabled())
         LOGGER.warn("Connection denied " + ack.getResponseMessage());
-      
+
       throw new SecurityException("Connection denied : "
           + ack.getResponseMessage());
     }
-    
+
     _participant.setIdentifier(id);
+
   }
+
+  // public void handleMessage(IoSession session, IConnectionAcknowledgement
+  // ack)
+  // throws Exception
+  // {
+  // IIdentifier id = ack.getAssignedIdentifier();
+  //
+  // _participant.setCommonRealityIdentifier(ack.getSource());
+  //
+  // if (LOGGER.isDebugEnabled())
+  // LOGGER.debug("Got connection acknowledgement, our id : " + id);
+  //
+  // if (_participant.getIdentifier() != null)
+  // if (LOGGER.isWarnEnabled())
+  // LOGGER
+  // .warn("We already have a valid identifier, but we got an acknowledgment anyway?");
+  //
+  // /*
+  // * if id is null, we're about to crap out..
+  // */
+  // if (id == null)
+  // {
+  // if (LOGGER.isWarnEnabled())
+  // LOGGER.warn("Connection denied " + ack.getResponseMessage());
+  //
+  // throw new SecurityException("Connection denied : "
+  // + ack.getResponseMessage());
+  // }
+  //
+  // _participant.setIdentifier(id);
+  // }
 
 }

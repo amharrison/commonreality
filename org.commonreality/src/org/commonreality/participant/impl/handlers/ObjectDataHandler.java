@@ -15,9 +15,9 @@ package org.commonreality.participant.impl.handlers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.handler.demux.MessageHandler;
-import org.commonreality.message.command.object.IObjectData;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.object.IObjectData;
+import org.commonreality.net.session.ISessionInfo;
 
 /**
  * handles both IObjectData and IObjectCommand
@@ -25,7 +25,7 @@ import org.commonreality.message.command.object.IObjectData;
  * @author developer
  */
 public class ObjectDataHandler  implements
-    MessageHandler<IObjectData>
+ IMessageHandler<IObjectData>
 {
   /**
    * logger definition
@@ -40,9 +40,17 @@ public class ObjectDataHandler  implements
   }
 
 
-  public void handleMessage(IoSession arg0, IObjectData message) throws Exception
+  // public void handleMessage(IoSession arg0, IObjectData message) throws
+  // Exception
+  // {
+  // _objectHandler.storeObjectData(message.getData(), message);
+  // }
+
+  @Override
+  public void accept(ISessionInfo t, IObjectData message)
   {
     _objectHandler.storeObjectData(message.getData(), message);
+
   }
 
 }

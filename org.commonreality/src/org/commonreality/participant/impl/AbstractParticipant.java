@@ -18,56 +18,34 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.service.IoHandler;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
-import org.commonreality.efferent.IEfferentCommandManager;
-import org.commonreality.efferent.impl.EfferentCommandManager;
 import org.commonreality.executor.GeneralThreadFactory;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.IMessage;
-import org.commonreality.message.credentials.ICredentials;
-import org.commonreality.message.request.IAcknowledgement;
-import org.commonreality.message.request.IRequest;
-import org.commonreality.message.request.object.IObjectDataRequest;
-import org.commonreality.mina.protocol.IMINAProtocolConfiguration;
-import org.commonreality.mina.service.ClientService;
-import org.commonreality.mina.service.IMINAService;
-import org.commonreality.mina.service.ServerService;
-import org.commonreality.mina.transport.IMINATransportProvider;
-import org.commonreality.notification.INotificationManager;
-import org.commonreality.notification.impl.NotificationManager;
-import org.commonreality.object.manager.IAfferentObjectManager;
-import org.commonreality.object.manager.IAgentObjectManager;
-import org.commonreality.object.manager.IEfferentObjectManager;
-import org.commonreality.object.manager.IMutableObjectManager;
-import org.commonreality.object.manager.IObjectManager;
-import org.commonreality.object.manager.IRealObjectManager;
-import org.commonreality.object.manager.ISensorObjectManager;
-import org.commonreality.object.manager.impl.AfferentObjectManager;
-import org.commonreality.object.manager.impl.AgentObjectManager;
-import org.commonreality.object.manager.impl.EfferentObjectManager;
-import org.commonreality.object.manager.impl.RealObjectManager;
-import org.commonreality.object.manager.impl.SensorObjectManager;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.IAcknowledgement;
+import org.commonreality.net.message.IMessage;
+import org.commonreality.net.message.request.IRequest;
+import org.commonreality.net.message.request.connect.ConnectionRequest;
+import org.commonreality.net.message.request.object.IObjectDataRequest;
+import org.commonreality.net.protocol.IProtocolConfiguration;
+import org.commonreality.net.service.IClientService;
+import org.commonreality.net.service.INetworkService;
+import org.commonreality.net.service.IServerService;
+import org.commonreality.net.session.ISessionInfo;
+import org.commonreality.net.session.ISessionListener;
+import org.commonreality.net.transport.ITransportProvider;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.participant.addressing.IAddressingInformation;
 import org.commonreality.participant.addressing.impl.BasicAddressingInformation;
 import org.commonreality.participant.impl.ack.SessionAcknowledgements;
-import org.commonreality.time.IAuthoritativeClock;
-import org.commonreality.time.IClock;
+import org.commonreality.participant.impl.handlers.DefaultHandlers;
+import org.commonreality.participant.impl.handlers.GeneralObjectHandler;
 
 /**
  * Skeleton participant that handles the majority of tasks. A participants life
@@ -84,25 +62,18 @@ import org.commonreality.time.IClock;
  * 
  * @author developer
  */
-public abstract class AbstractParticipant implements IParticipant
+public abstract class AbstractParticipant extends ThinParticipant implements
+    IParticipant
 {
   /**
    * logger definition
    */
-  static private final Log                 LOGGER = LogFactory
-                                                      .getLog(AbstractParticipant.class);
+  static final Log                          LOGGER = LogFactory
+                                                               .getLog(AbstractParticipant.class);
 
-  static private ScheduledExecutorService  _periodicExecutor;
+  static private ScheduledExecutorService           _periodicExecutor;
 
-  static private OrderedThreadPoolExecutor _sharedIOExecutor;
-
-  static public CompletableFuture<IAcknowledgement> EMPTY_ACK;
-
-  static
-  {
-    EMPTY_ACK = new CompletableFuture<IAcknowledgement>();
-    EMPTY_ACK.complete(null);
-  }
+ 
 
   /**
    * return a shared periodic executor that can be useful in many circumstances
@@ -122,123 +93,32 @@ public abstract class AbstractParticipant implements IParticipant
     }
   }
 
-  static public OrderedThreadPoolExecutor getSharedIOExecutor()
-  {
-    synchronized (AbstractParticipant.class)
-    {
-      if (_sharedIOExecutor == null || _sharedIOExecutor.isShutdown()
-          || _sharedIOExecutor.isTerminated())
-      {
-        int max = Integer.parseInt(System.getProperty(
-            "participant.ioMaxThreads", "1"));
-        _sharedIOExecutor = new OrderedThreadPoolExecutor(1, max, 10000,
-            TimeUnit.MILLISECONDS, new GeneralThreadFactory(
-                "Shared-IOProcessor"));
-      }
-      return _sharedIOExecutor;
-    }
-  }
+  private IIdentifier                         _commonRealityIdentifier;
 
-  private IIdentifier                      _identifier;
+  private volatile ISessionInfo<?>            _crSession;                        // if
+                                                                                  // connected
+                                                                                  // to
+                                                                                  // CR.
 
-  private IIdentifier                      _commonRealityIdentifier;
+  private Map<INetworkService, SocketAddress> _services;
 
-  private IoHandler                        _handler;
+  private GeneralThreadFactory                _centralThreadFactory;
 
-  private Map<IMINAService, SocketAddress> _services;
+  private GeneralThreadFactory                _ioThreadFactory;
 
-  private ExecutorService                  _ioExecutor;
-
-  private volatile State                   _state;
-
-  private Lock                             _stateLock   = new ReentrantLock();
-
-  private Condition                        _stateChange = _stateLock
-                                                            .newCondition();
-
-  private IClock                           _clock;
-
-  private ISensorObjectManager             _sensorManager;
-
-  private IAgentObjectManager              _agentManager;
-
-  private IAfferentObjectManager           _afferentManager;
-
-  private IEfferentObjectManager           _efferentManager;
-
-  private IRealObjectManager               _realManager;
-
-  private IEfferentCommandManager          _efferentCommandManager;
-
-  private INotificationManager             _notificationManager;
-
-  private GeneralThreadFactory             _centralThreadFactory;
-
-  private GeneralThreadFactory             _ioThreadFactory;
+  private GeneralObjectHandler                _generalObjectHandler;
 
   public AbstractParticipant(IIdentifier.Type type)
   {
-    _services = new HashMap<IMINAService, SocketAddress>();
-    _ioExecutor = createIOExecutorService();
-    _handler = createIOHandler(type);
-    _sensorManager = createSensorObjectManager();
-    _agentManager = createAgentObjectManager();
-    _afferentManager = createAfferentObjectManager();
-    _efferentManager = createEfferentObjectManager();
-    _efferentCommandManager = createEfferentCommandManager();
-    _realManager = createRealObjectManager();
-    _notificationManager = createNotificationManager();
-    _state = State.UNKNOWN;
+    super(type);
+    _services = new HashMap<INetworkService, SocketAddress>();
+   
+    _generalObjectHandler = new GeneralObjectHandler(this);
   }
 
-  protected ISensorObjectManager createSensorObjectManager()
+  public GeneralObjectHandler getGeneralObjectHandler()
   {
-    return new SensorObjectManager();
-  }
-
-  protected IRealObjectManager createRealObjectManager()
-  {
-    return new RealObjectManager();
-  }
-
-  protected IAgentObjectManager createAgentObjectManager()
-  {
-    return new AgentObjectManager();
-  }
-
-  protected IAfferentObjectManager createAfferentObjectManager()
-  {
-    return new AfferentObjectManager();
-  }
-
-  protected IEfferentObjectManager createEfferentObjectManager()
-  {
-    return new EfferentObjectManager();
-  }
-
-  protected IEfferentCommandManager createEfferentCommandManager()
-  {
-    return new EfferentCommandManager();
-  }
-
-  protected INotificationManager createNotificationManager()
-  {
-    return new NotificationManager(this);
-  }
-
-  public INotificationManager getNotificationManager()
-  {
-    return _notificationManager;
-  }
-
-  public IEfferentCommandManager getEfferentCommandManager()
-  {
-    return _efferentCommandManager;
-  }
-
-  public IRealObjectManager getRealObjectManager()
-  {
-    return _realManager;
+    return _generalObjectHandler;
   }
 
   public void setCommonRealityIdentifier(IIdentifier crId)
@@ -255,8 +135,6 @@ public abstract class AbstractParticipant implements IParticipant
   }
 
   abstract public IAddressingInformation getAddressingInformation();
-
-  abstract public ICredentials getCredentials();
 
   abstract public String getName();
 
@@ -275,27 +153,159 @@ public abstract class AbstractParticipant implements IParticipant
     return _ioThreadFactory;
   }
 
+  protected void setSession(ISessionInfo<?> session)
+  {
+    _crSession = session;
+  }
+
+  protected ISessionInfo<?> getSession()
+  {
+    return _crSession;
+  }
+
   /**
-   * creates a single thread pool executor from Mina's orderd thread pool
-   * executor so that we can be sure the messages do actually arrive in order.
+   * creates and returns the normal message handles required by this
+   * participant.
    * 
    * @return
    */
-  protected ExecutorService createIOExecutorService()
+  protected Map<Class<?>, IMessageHandler<?>> createDefaultHandlers()
   {
-    if (Boolean.getBoolean("participant.useSharedThreads"))
-      return getSharedIOExecutor();
-
-    int max = Integer.parseInt(System.getProperty("participant.ioMaxThreads",
-        "1"));
-    return new OrderedThreadPoolExecutor(1, max, 10000, TimeUnit.MILLISECONDS,
-        getIOThreadFactory());
-    // return Executors.newSingleThreadExecutor(getIOThreadFactory());
+    return new DefaultHandlers().createHandlers(this);
   }
 
-  final public Executor getIOExecutor()
+  /**
+   * by default, returns null.. as server side for an abstract participant is a
+   * little less clear.
+   * 
+   * @return
+   */
+  protected ISessionListener createDefaultServerListener()
   {
-    return _ioExecutor;
+    return new ISessionListener() {
+
+      @Override
+      public void opened(ISessionInfo<?> session)
+      {
+        session.addExceptionHandler((s, t) -> {
+          try
+          {
+            LOGGER.error(
+                String.format("Exception caught from %s, closing ", s), t);
+            if (s.isConnected() && !s.isClosing()) s.close();
+          }
+          catch (Exception e)
+          {
+            LOGGER.error(String.format("Exception from %s, closing. ", s), e);
+          }
+        });
+      }
+
+      @Override
+      public void closed(ISessionInfo<?> session)
+      {
+
+      }
+
+      @Override
+      public void created(ISessionInfo<?> session)
+      {
+
+      }
+
+      @Override
+      public void destroyed(ISessionInfo<?> session)
+      {
+
+      }
+
+    };
+  }
+
+  protected ISessionListener createDefaultClientListener()
+  {
+    return new ISessionListener() {
+
+      @Override
+      public void opened(ISessionInfo<?> session)
+      {
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Connection opened to %s", session));
+
+        setSession(session);
+
+        try
+        {
+          new SessionAcknowledgements(session); // self installs
+
+          session
+              .addExceptionHandler((s, t) -> {
+                try
+                {
+                  LOGGER.error(
+                      String.format("Exception caught from %s, closing ", s), t);
+                  if (s.isConnected() && !s.isClosing()) s.close();
+                }
+                catch (Exception e)
+                {
+                  LOGGER.error(
+                      String.format("Exception from %s, closing. ", s), e);
+                }
+              });
+        }
+        catch (Exception e)
+        {
+          LOGGER.error("FAiled in connect properly? ", e);
+        }
+
+        /*
+         * great big fat hack, it is possible for the connection message to be
+         * sent before CR has actually received the opened callback, in which
+         * case the message will be dropped. so we delay the sending of this
+         * message.
+         */
+        AbstractParticipant.getPeriodicExecutor().schedule(new Runnable() {
+          public void run()
+          {
+            send(new ConnectionRequest(getName(), _type, getCredentials(),
+                getAddressingInformation()));
+
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug("Sent connection request");
+          }
+        }, 50, TimeUnit.MILLISECONDS);
+      }
+
+      @Override
+      public void destroyed(ISessionInfo<?> session)
+      {
+
+      }
+
+      @Override
+      public void created(ISessionInfo<?> session)
+      {
+
+      }
+
+      @Override
+      public void closed(ISessionInfo<?> session)
+      {
+        if (session == getSession())
+          try
+          {
+            setSession(null);
+            if (stateMatches(State.STARTED, State.SUSPENDED)) stop();
+
+            if (stateMatches(State.CONNECTED, State.INITIALIZED, State.UNKNOWN,
+                State.STOPPED)) shutdown();
+          }
+          catch (Exception e)
+          {
+            LOGGER.error("Failed to cleanly disconnect from CR", e);
+          }
+      }
+    };
   }
 
   /**
@@ -304,14 +314,14 @@ public abstract class AbstractParticipant implements IParticipant
    * @param service
    * @param address
    */
-  public void addServerService(IMINATransportProvider transport,
-      IMINAProtocolConfiguration configuration, SocketAddress address)
+  public void addServerService(IServerService service,
+      ITransportProvider transport, IProtocolConfiguration configuration,
+      SocketAddress address)
   {
     try
     {
-      ServerService service = new ServerService();
-      service.configure(transport, configuration, getIOHandler(),
-          getIOExecutor());
+      service.configure(transport, configuration, createDefaultHandlers(),
+          createDefaultServerListener(), getIOThreadFactory());
       // if state is anything but unknown, we need to start the service
       if (!stateMatches(State.UNKNOWN)) startService(service, address);
       _services.put(service, address);
@@ -329,14 +339,14 @@ public abstract class AbstractParticipant implements IParticipant
    * @param service
    * @param address
    */
-  public void addClientService(IMINATransportProvider transport,
-      IMINAProtocolConfiguration configuration, SocketAddress address)
+  public void addClientService(IClientService service,
+      ITransportProvider transport, IProtocolConfiguration configuration,
+      SocketAddress address)
   {
     try
     {
-      ClientService service = new ClientService();
-      service.configure(transport, configuration, getIOHandler(),
-          getIOExecutor());
+      service.configure(transport, configuration, createDefaultHandlers(),
+          createDefaultClientListener(), getIOThreadFactory());
       // if state is anything but unknown, we need to start the service
       if (!stateMatches(State.UNKNOWN)) startService(service, address);
       _services.put(service, address);
@@ -347,7 +357,7 @@ public abstract class AbstractParticipant implements IParticipant
     }
   }
 
-  private void startService(IMINAService service, SocketAddress address)
+  private void startService(INetworkService service, SocketAddress address)
       throws Exception
   {
     if (LOGGER.isDebugEnabled())
@@ -356,7 +366,7 @@ public abstract class AbstractParticipant implements IParticipant
     service.start(address);
   }
 
-  private void stopService(IMINAService service, SocketAddress address)
+  private void stopService(INetworkService service, SocketAddress address)
       throws Exception
   {
     if (LOGGER.isDebugEnabled())
@@ -365,299 +375,20 @@ public abstract class AbstractParticipant implements IParticipant
     service.stop(address);
   }
 
-  private void setState(State state)
-  {
-    try
-    {
-      _stateLock.lock();
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug(getName() + " Setting state to " + state + " from "
-            + _state);
-      _state = state;
-      _stateChange.signalAll();
-    }
-    finally
-    {
-      _stateLock.unlock();
-    }
-  }
 
-  final public State waitForState(State... states) throws InterruptedException
-  {
-    return waitForState(0, states);
-  }
-
-  private boolean matches(State... states)
-  {
-    for (State test : states)
-      if (test == _state) return true;
-    return false;
-  }
-
-  final public State waitForState(long waitTime, State... states)
-      throws InterruptedException
-  {
-    try
-    {
-      _stateLock.lock();
-
-      if (waitTime <= 0)
-        while (!matches(states))
-          _stateChange.await();
-      else
-      {
-        long endTime = System.currentTimeMillis() + waitTime;
-        while (!matches(states) && System.currentTimeMillis() < endTime)
-          _stateChange.await(waitTime, TimeUnit.MILLISECONDS);
-      }
-
-      return _state;
-    }
-    finally
-    {
-      _stateLock.unlock();
-    }
-  }
-
-  final public State getState()
-  {
-    try
-    {
-      _stateLock.lock();
-      return _state;
-    }
-    finally
-    {
-      _stateLock.unlock();
-    }
-  }
-
-  public boolean stateMatches(State... states)
-  {
-    State state = getState();
-    for (State test : states)
-      if (state == test) return true;
-    return false;
-  }
-
-  /**
-   * checks the state to see if it matches one of these, if not, it fires an
-   * exception
-   * 
-   * @param states
-   */
-  protected void checkState(State... states)
-  {
-    State state = getState();
-    StringBuilder sb = new StringBuilder("(");
-    for (State test : states)
-      if (test == state)
-        return;
-      else
-        sb.append(test).append(", ");
-
-    if (sb.length() > 1) sb.delete(sb.length() - 2, sb.length());
-    sb.append(")");
-
-    throw new IllegalStateException("Current state (" + state
-        + ") is invalid, expecting " + sb);
-  }
-
-  /**
-   * called after the connection has been established..
-   * 
-   * @param identifier
-   */
-  public void setIdentifier(IIdentifier identifier)
-  {
-    if (getIdentifier() != null)
-      throw new RuntimeException("identifier is already set");
-    _identifier = identifier;
-
-    setState(State.CONNECTED);
-  }
-
-  /**
-   * we don't have a valid identifier until we have connected to reality
-   * 
-   * @see org.commonreality.identifier.IIdentifiable#getIdentifier()
-   */
-  public IIdentifier getIdentifier()
-  {
-    return _identifier;
-  }
-
-  public void configure(Map<String, String> options) throws Exception
-  {
-    checkState(State.CONNECTED, State.INITIALIZED, State.STOPPED, State.UNKNOWN);
-  }
-
-  /**
-   * called in response to a command from Reality to get everything ready to
-   * run. we must be connected first.
-   */
-  public void initialize() throws Exception
-  {
-    checkState(State.CONNECTED);
-
-    setState(State.INITIALIZED);
-  }
-
-  /**
-   * called to actually start this participant
-   */
-  public void start() throws Exception
-  {
-    checkState(State.INITIALIZED);
-
-    if (LOGGER.isDebugEnabled()) LOGGER.debug("Started " + getName());
-    setState(State.STARTED);
-  }
-
-  /**
-   * called when this participant needs to stop
-   */
-  public void stop() throws Exception
-  {
-    checkState(State.STARTED, State.SUSPENDED);
-    if (LOGGER.isDebugEnabled()) LOGGER.debug("Stopped " + getName());
-    setState(State.STOPPED);
-  }
-
-  public void suspend() throws Exception
-  {
-    checkState(State.STARTED);
-    setState(State.SUSPENDED);
-  }
-
-  public void resume() throws Exception
-  {
-    checkState(State.SUSPENDED);
-    setState(State.STARTED);
-  }
-
-  /**
-   * called when we are to reset to a post-initialize state. this impl attempts
-   * to reset the clock if it is INetworked or ISettabl
-   */
-  public void reset(boolean clockWillBeReset) throws Exception
-  {
-    checkState(State.STOPPED, State.INITIALIZED);
-
-    if (clockWillBeReset)
-    {
-      IClock clock = getClock();
-      IAuthoritativeClock ac = clock.getAuthority().get(); // this better be
-                                                           // here
-
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug(String.format("Requesting time reset"));
-
-      // no key awareness needed
-      ac.requestAndWaitForTime(0, null).handle((d, e) -> {
-        if (e != null)
-          LOGGER.error("Failed to reset clock ", e);
-        else if (LOGGER.isDebugEnabled()) LOGGER.debug("Time reset");
-        return null;
-      });
-      //
-      // if (clock instanceof INetworkedClock)
-      // {
-      // if (LOGGER.isDebugEnabled()) LOGGER.debug("Reseting network clock");
-      // ((INetworkedClock) clock)
-      // .setCurrentTimeCommand(new TimeCommand(null, 0));
-      // }
-      // else if (clock instanceof ISetableClock)
-      // {
-      // if (LOGGER.isDebugEnabled()) LOGGER.debug("Reseting setable clock");
-      // ((ISetableClock) clock).setTime(0);
-      // }
-    }
-
-    setState(State.INITIALIZED);
-  }
-
-  public void shutdown(boolean force) throws Exception
-  {
-    if (!force)
-      checkState(State.STOPPED, State.CONNECTED, State.INITIALIZED,
-          State.UNKNOWN);
-
-    try
-    {
-      disconnect(force);
-    }
-    catch (Exception e)
-    {
-      LOGGER.error("Exception ", e);
-    }
-
-    clearObjectManagers();
-
-    /*
-     * and kill the executor
-     */
-    if (_ioExecutor != null && _ioExecutor != _sharedIOExecutor
-        && !_ioExecutor.isShutdown())
-    {
-      _ioExecutor.shutdown();
-      _ioExecutor = null;
-
-      /**
-       * release the thread groups
-       */
-      getIOThreadFactory().dispose();
-      getCentralThreadFactory().dispose();
-    }
-
-  }
-
-  /**
-   * 
-   */
-  public void shutdown() throws Exception
-  {
-    shutdown(false);
-  }
-
-  /**
-   * 
-   */
-  @SuppressWarnings("unchecked")
-  protected void clearObjectManagers()
-  {
-    IObjectManager om = getAfferentObjectManager();
-    if (om instanceof IMutableObjectManager)
-      ((IMutableObjectManager) om).remove(om.getIdentifiers());
-
-    om = getEfferentCommandManager();
-    if (om instanceof IMutableObjectManager)
-      ((IMutableObjectManager) om).remove(om.getIdentifiers());
-
-    om = getEfferentObjectManager();
-    if (om instanceof IMutableObjectManager)
-      ((IMutableObjectManager) om).remove(om.getIdentifiers());
-
-    om = getAgentObjectManager();
-    if (om instanceof IMutableObjectManager)
-      ((IMutableObjectManager) om).remove(om.getIdentifiers());
-
-    om = getSensorObjectManager();
-    if (om instanceof IMutableObjectManager)
-      ((IMutableObjectManager) om).remove(om.getIdentifiers());
-  }
 
   /**
    * @bug this starts all services in a random order. it should be server first
    *      then clients to avoid deadlock in complex configurations
    * @see org.commonreality.participant.IParticipant#connect()
    */
+  @Override
   public void connect() throws Exception
   {
     checkState(State.UNKNOWN);
 
     Exception differed = null;
-    for (Map.Entry<IMINAService, SocketAddress> entry : _services.entrySet())
+    for (Map.Entry<INetworkService, SocketAddress> entry : _services.entrySet())
       try
       {
         startService(entry.getKey(), entry.getValue());
@@ -674,11 +405,13 @@ public abstract class AbstractParticipant implements IParticipant
     // setState(State.CONNECTED);
   }
 
+  @Override
   public void disconnect() throws Exception
   {
     disconnect(false);
   }
 
+  @Override
   public void disconnect(boolean force) throws Exception
   {
     if (!force)
@@ -686,7 +419,7 @@ public abstract class AbstractParticipant implements IParticipant
           State.UNKNOWN);
 
     Exception differed = null;
-    for (Map.Entry<IMINAService, SocketAddress> entry : _services.entrySet())
+    for (Map.Entry<INetworkService, SocketAddress> entry : _services.entrySet())
       try
       {
         stopService(entry.getKey(), entry.getValue());
@@ -706,25 +439,10 @@ public abstract class AbstractParticipant implements IParticipant
   protected Collection<IAddressingInformation> getServerAddressInformation()
   {
     ArrayList<IAddressingInformation> rtn = new ArrayList<IAddressingInformation>();
-    for (Map.Entry<IMINAService, SocketAddress> entry : _services.entrySet())
-      if (entry.getKey() instanceof ServerService)
+    for (Map.Entry<INetworkService, SocketAddress> entry : _services.entrySet())
+      if (entry.getKey() instanceof IServerService)
         rtn.add(new BasicAddressingInformation(entry.getValue()));
     return rtn;
-  }
-
-  /**
-   * return the clock that this participant has access to
-   * 
-   * @return
-   */
-  public IClock getClock()
-  {
-    return _clock;
-  }
-
-  protected void setClock(IClock clock)
-  {
-    _clock = clock;
   }
 
   /**
@@ -734,9 +452,11 @@ public abstract class AbstractParticipant implements IParticipant
    * 
    * @param message
    */
+  @Override
   public Future<IAcknowledgement> send(IMessage message)
   {
-    BasicParticipantIOHandler handler = (BasicParticipantIOHandler) getIOHandler();
+    // BasicParticipantIOHandler handler = (BasicParticipantIOHandler)
+    // getIOHandler();
 
     /*
      * anytime we send data out, we store it because we wont actually set the
@@ -749,14 +469,15 @@ public abstract class AbstractParticipant implements IParticipant
     if (message instanceof IObjectDataRequest
         && !IIdentifier.ALL.equals(((IObjectDataRequest) message)
             .getDestination()))
-      handler.getObjectHandler().storeObjectData(
+      getGeneralObjectHandler().storeObjectData(
           ((IObjectDataRequest) message).getData(), message);
-
-    IoSession session = handler.getCommonRealitySession();
 
     Future<IAcknowledgement> rtn = null;
 
+    ISessionInfo<?> session = getSession();
     if (session != null)
+    {
+      // this could be dangerous.. where else do we sync on session?
       synchronized (session)
       {
         if (message instanceof IRequest)
@@ -765,46 +486,25 @@ public abstract class AbstractParticipant implements IParticipant
               .getSessionAcks(session);
           if (sa != null) rtn = sa.newAckFuture(message);
         }
+      }
 
+      try
+      {
         session.write(message);
       }
-    else if (LOGGER.isDebugEnabled())
-      LOGGER.debug("Null session, could not send");
+      catch (Exception e)
+      {
+        // TODO Auto-generated catch block
+        LOGGER.error("AbstractParticipant.send threw Exception : ", e);
+      }
+    }
+    else if (LOGGER.isWarnEnabled())
+      LOGGER.warn("Null session, could not send " + message,
+          new RuntimeException());
 
-    if (rtn == null)
- rtn = EMPTY_ACK;
+    if (rtn == null) rtn = EMPTY_ACK;
 
     return rtn;
-  }
-
-  protected IoHandler createIOHandler(IIdentifier.Type type)
-  {
-    return new BasicParticipantIOHandler(this, type);
-  }
-
-  final protected IoHandler getIOHandler()
-  {
-    return _handler;
-  }
-
-  public ISensorObjectManager getSensorObjectManager()
-  {
-    return _sensorManager;
-  }
-
-  public IAfferentObjectManager getAfferentObjectManager()
-  {
-    return _afferentManager;
-  }
-
-  public IEfferentObjectManager getEfferentObjectManager()
-  {
-    return _efferentManager;
-  }
-
-  public IAgentObjectManager getAgentObjectManager()
-  {
-    return _agentManager;
   }
 
 }

@@ -16,23 +16,21 @@ package org.commonreality.reality.impl;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mina.core.service.IoHandler;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.identifier.impl.BasicIdentifier;
-import org.commonreality.message.IMessage;
-import org.commonreality.message.command.time.TimeCommand;
-import org.commonreality.message.credentials.ICredentials;
-import org.commonreality.message.request.IAcknowledgement;
-import org.commonreality.message.request.IRequest;
+import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.IAcknowledgement;
+import org.commonreality.net.message.IMessage;
+import org.commonreality.net.message.command.time.TimeCommand;
+import org.commonreality.net.message.credentials.ICredentials;
+import org.commonreality.net.message.request.IRequest;
+import org.commonreality.net.session.ISessionInfo;
+import org.commonreality.net.session.ISessionListener;
 import org.commonreality.object.identifier.BasicSensoryIdentifier;
 import org.commonreality.object.identifier.ISensoryIdentifier;
 import org.commonreality.participant.addressing.IAddressingInformation;
@@ -40,6 +38,7 @@ import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.participant.impl.ack.SessionAcknowledgements;
 import org.commonreality.reality.CommonReality;
 import org.commonreality.reality.IReality;
+import org.commonreality.reality.impl.handler.DefaultHandlers;
 import org.commonreality.time.IClock;
 import org.commonreality.time.impl.OwnedClock;
 
@@ -55,88 +54,100 @@ import org.commonreality.time.impl.OwnedClock;
 public class DefaultReality extends AbstractParticipant implements IReality
 {
 
-  @Deprecated
-  static public final String MESSAGE_TTL                 = "MessageTTL";
+  static public final String              MESSAGE_TTL                 = "MessageTTL";
 
-  static public final String ACK_TIMEOUT_PARAM           = "AcknowledgementTimeout";
+  static public final String              ACK_TIMEOUT_PARAM           = "AcknowledgementTimeout";
 
-  static public final String DISCONNECT_PARAM            = "DisconnectAllOnTimeout";
+  static public final String              DISCONNECT_PARAM            = "DisconnectAllOnTimeout";
 
   /**
    * logger definition
    */
-  static private final Log   LOGGER                      = LogFactory
-                                                             .getLog(DefaultReality.class);
+  static private final Log                LOGGER                      = LogFactory
+                                                                          .getLog(DefaultReality.class);
 
-  private OwnedClock         _masterClock;
+  private OwnedClock                      _masterClock;
 
-  private long               _timeout                    = 10000;
+  private long                            _timeout                    = 10000;
 
   // private ExecutorService _centralExecutor;
 
-  private boolean            _disconnectAllOnMissedState = false;
+  private boolean                         _disconnectAllOnMissedState = false;
+
+  final private StateAndConnectionManager _manager;
 
   public DefaultReality()
   {
     super(IIdentifier.Type.REALITY);
-    // setIdentifier(new BasicIdentifier(getName(), IIdentifier.Type.REALITY,
-    // null));
-    // setCommonRealityIdentifier(getIdentifier());
 
-    // _masterClock = new NetworkedMasterClock(this);
-    // // silence the clock
-    // _masterClock.setInvalidAccessThrowsException(false);
-    //
     _masterClock = new OwnedClock(0.05, (newTime, ownedClock) -> {
       // send the time update whenever the clock is updated
         double timeShift = ownedClock.getAuthority().get().getLocalTimeShift();
         send(new TimeCommand(getIdentifier(), newTime - timeShift));
       });
 
+    _manager = new StateAndConnectionManager(this, getCentralExector());
+    _manager.setAcknowledgementTimeout(getTimeout());
+    _manager.setPromiscuous(true); // for now, this should ultimately be removed
     CommonReality.setReality(this);
   }
 
-  /**
-   * return a cached thread pool executor so that each connection will be
-   * processed by its own thread. the io executor is based off of MINA's ordered
-   * thread pool executor so that we can ensure properly sequenced delivery
-   */
-  @Override
-  protected ExecutorService createIOExecutorService()
+
+
+  public StateAndConnectionManager getStateAndConnectionManager()
   {
-    // _centralExecutor = Executors
-    // .newSingleThreadExecutor(getCentralThreadFactory());
-
-    // int min = Math.min(2, Runtime.getRuntime().availableProcessors());
-    // int max = Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
-    // return new OrderedThreadPoolExecutor(min, max, 5000,
-    // TimeUnit.MILLISECONDS, getIOThreadFactory());
-
-    // having this possible is bad as long as there is a blocking call
-    // (StateAndCoonectionManager)
-    //
-    if (Boolean.getBoolean("defaultReality.useSharedThreads"))
-      return getSharedIOExecutor();
-
-    int max = Integer.parseInt(System.getProperty(
-        "defaultReality.ioMaxThreads", Integer.toString(Integer.MAX_VALUE)));
-    return new OrderedThreadPoolExecutor(1, max, 10000, TimeUnit.MILLISECONDS,
-        getIOThreadFactory());
-    // return Executors.newCachedThreadPool(getIOThreadFactory());
-  }
-
-  protected StateAndConnectionManager getStateAndConnectionManager()
-  {
-    StateAndConnectionManager scm = ((RealityIOHandler) getIOHandler())
-        .getManager();
-    scm.setAcknowledgementTimeout(getTimeout());
-    return scm;
+    return _manager;
   }
 
   @Override
-  protected IoHandler createIOHandler(IIdentifier.Type type)
+  protected ISessionListener createDefaultServerListener()
   {
-    return new RealityIOHandler(this);
+    return new ISessionListener() {
+
+      @Override
+      public void opened(ISessionInfo<?> session)
+      {
+        new SessionAcknowledgements(session);// auto install ack support
+        session.addExceptionHandler((s, t) -> {
+          try
+          {
+            LOGGER.error(
+                String.format("Exception caught from %s, closing ", s), t);
+            if (s.isConnected() && !s.isClosing()) s.close();
+          }
+          catch (Exception e)
+          {
+            LOGGER.error(String.format("Exception from %s, closing. ", s), e);
+          }
+        });
+      }
+
+      @Override
+      public void destroyed(ISessionInfo<?> session)
+      {
+        // TODO Auto-generated method stub
+
+      }
+
+      @Override
+      public void created(ISessionInfo<?> session)
+      {
+        // TODO Auto-generated method stub
+
+      }
+
+      @Override
+      public void closed(ISessionInfo<?> session)
+      {
+        _manager.participantDisconnected(session);
+      }
+    };
+  }
+
+  @Override
+  protected Map<Class<?>, IMessageHandler<?>> createDefaultHandlers()
+  {
+    return new DefaultHandlers().createHandlers(this);
   }
 
   public Executor getCentralExector()
@@ -265,14 +276,21 @@ public class DefaultReality extends AbstractParticipant implements IReality
     Collection<IIdentifier> unresponsiveParticipants = manager.setState(state);
     for (IIdentifier unresponsive : unresponsiveParticipants)
     {
-      IoSession session = manager.getParticipantSession(unresponsive);
+      ISessionInfo session = manager.getParticipantSession(unresponsive);
       if (session == null || session.isClosing() || !session.isConnected())
         continue;
 
       if (LOGGER.isWarnEnabled())
         LOGGER.warn(unresponsive + " did not respond to state command ["
             + state + "], disconnecting.");
-      session.close();
+      try
+      {
+        session.close();
+      }
+      catch (Exception e)
+      {
+        LOGGER.error("Failed to close connection with " + unresponsive, e);
+      }
       allResponded = false;
     }
 
@@ -281,12 +299,19 @@ public class DefaultReality extends AbstractParticipant implements IReality
       if (LOGGER.isWarnEnabled())
         LOGGER.warn("Shutting down all due to unresponsive "
             + unresponsiveParticipants);
-      for (IoSession session : manager.getActiveSessions(null))
+      for (ISessionInfo session : manager.getActiveSessions(null))
         if (!session.isClosing() && session.isConnected())
         {
           IIdentifier id = manager.getParticipantIdentifier(session);
           if (LOGGER.isWarnEnabled()) LOGGER.warn("Closing " + id);
-          session.close();
+          try
+          {
+            session.close();
+          }
+          catch (Exception e)
+          {
+            LOGGER.error("Failed to close connection with " + id, e);
+          }
         }
     }
 
@@ -389,13 +414,13 @@ public class DefaultReality extends AbstractParticipant implements IReality
    * this will actually send to EVERYONE connected - and returns a null
    * acknowldgement for now..
    * 
-   * @see org.commonreality.participant.impl.AbstractParticipant#send(org.commonreality.message.IMessage)
+   * @see org.commonreality.participant.impl.AbstractParticipant#send(org.commonreality.net.message.IMessage)
    */
   @Override
   public Future<IAcknowledgement> send(IMessage message)
   {
-    for (IoSession session : getStateAndConnectionManager().getActiveSessions(
-        null))
+    for (ISessionInfo session : getStateAndConnectionManager()
+        .getActiveSessions(null))
       send(session, message);
 
     return EMPTY_ACK;
@@ -403,8 +428,8 @@ public class DefaultReality extends AbstractParticipant implements IReality
 
   public Future<IAcknowledgement> send(Object session, IMessage message)
   {
-    if (session instanceof IoSession)
-      return send((IoSession) session, message);
+    if (session instanceof ISessionInfo)
+      return send((ISessionInfo<?>) session, message);
     else if (session instanceof IIdentifier)
       return send((IIdentifier) session, message);
 
@@ -412,21 +437,32 @@ public class DefaultReality extends AbstractParticipant implements IReality
         + " was neither an IIdentifier or IoSession");
   }
 
-  protected Future<IAcknowledgement> send(IoSession session, IMessage message)
+  protected Future<IAcknowledgement> send(ISessionInfo<?> session,
+      IMessage message)
   {
     Future<IAcknowledgement> rtn = null;
 
     if (session != null)
       synchronized (session)
       {
-        if (message instanceof IRequest)
         {
-          SessionAcknowledgements sa = SessionAcknowledgements
-              .getSessionAcks(session);
-          if (sa != null) rtn = sa.newAckFuture(message);
+          if (message instanceof IRequest)
+          {
+            SessionAcknowledgements sa = SessionAcknowledgements
+                .getSessionAcks(session);
+            if (sa != null) rtn = sa.newAckFuture(message);
+          }
         }
-
-        session.write(message);
+        // pulled write out..
+        try
+        {
+          session.write(message);
+        }
+        catch (Exception e)
+        {
+          LOGGER.error(String.format("Failed to write message %s to %s ",
+              message, session), e);
+        }
       }
     else if (LOGGER.isWarnEnabled()) LOGGER.warn("null session?");
 
@@ -443,8 +479,8 @@ public class DefaultReality extends AbstractParticipant implements IReality
   {
     if (IIdentifier.ALL.equals(identifier)) return send(message);
 
-    IoSession session = getStateAndConnectionManager().getParticipantSession(
-        identifier);
+    ISessionInfo session = getStateAndConnectionManager()
+        .getParticipantSession(identifier);
 
     if (session == null)
       /*
@@ -588,7 +624,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
   }
 
   /**
-   * @see org.commonreality.reality.IReality#add(org.commonreality.message.credentials.ICredentials)
+   * @see org.commonreality.reality.IReality#add(org.commonreality.net.message.credentials.ICredentials)
    */
   public void add(ICredentials credentials, boolean wantsClockControl)
   {
@@ -597,7 +633,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
   }
 
   /**
-   * @see org.commonreality.reality.IReality#remove(org.commonreality.message.credentials.ICredentials)
+   * @see org.commonreality.reality.IReality#remove(org.commonreality.net.message.credentials.ICredentials)
    */
   public void remove(ICredentials credentials)
   {

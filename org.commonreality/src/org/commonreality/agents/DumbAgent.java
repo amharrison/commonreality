@@ -14,7 +14,7 @@ public class DumbAgent extends AbstractAgent
   static private final transient Log LOGGER              = LogFactory
                                                              .getLog(DumbAgent.class);
 
-  private boolean                    _participatesInTime = false;
+  private boolean                    _participatesInTime = true;
 
   public DumbAgent()
   {

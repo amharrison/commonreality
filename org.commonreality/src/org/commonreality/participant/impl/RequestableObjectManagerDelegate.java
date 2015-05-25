@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.request.object.NewIdentifierRequest;
+import org.commonreality.net.message.request.object.NewIdentifierRequest;
 import org.commonreality.participant.IParticipant;
 
 /**

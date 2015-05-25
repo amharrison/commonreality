@@ -27,10 +27,13 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.agents.IAgent;
-import org.commonreality.message.credentials.ICredentials;
-import org.commonreality.message.credentials.PlainTextCredentials;
-import org.commonreality.mina.protocol.IMINAProtocolConfiguration;
-import org.commonreality.mina.transport.IMINATransportProvider;
+import org.commonreality.net.message.credentials.ICredentials;
+import org.commonreality.net.message.credentials.PlainTextCredentials;
+import org.commonreality.net.protocol.IProtocolConfiguration;
+import org.commonreality.net.provider.INetworkingProvider;
+import org.commonreality.net.service.IClientService;
+import org.commonreality.net.service.IServerService;
+import org.commonreality.net.transport.ITransportProvider;
 import org.commonreality.participant.IParticipant;
 import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.reality.CommonReality;
@@ -112,83 +115,6 @@ public class RealityParser
     new RealitySetup(reality, sensors, agents).run();
   }
 
-  // protected void startUp(IReality reality, Collection<ISensor> sensors,
-  // Collection<IAgent> agents)
-  // {
-  // /*
-  // * initialize CR
-  // */
-  // if (reality != null) try
-  // {
-  // reality.initialize();
-  // reality.waitForState(State.INITIALIZED);
-  // }
-  // catch (Exception e)
-  // {
-  // throw new RuntimeException("Could not initialize common reality ", e);
-  // }
-  //
-  // /*
-  // * and connect everyone
-  // */
-  // for (ISensor sensor : sensors)
-  // try
-  // {
-  // sensor.connect();
-  // /*
-  // * we could wait for initialized, but by doing this we allow the
-  // participants to initialize in parallel.
-  // * we must check for both states because it is possible that it would reach
-  // initialized before
-  // * wait for state(connected) is even called.
-  // */
-  // sensor.waitForState(State.CONNECTED, State.INITIALIZED);
-  // // sensor.waitForState(State.INITIALIZED);
-  // }
-  // catch (Exception e)
-  // {
-  // throw new RuntimeException("Could not connect sensor " + sensor, e);
-  // }
-  //
-  // for (IAgent agent : agents)
-  // try
-  // {
-  // agent.connect();
-  // agent.waitForState(State.CONNECTED, State.INITIALIZED);
-  // // agent.waitForState(State.INITIALIZED);
-  // }
-  // catch (Exception e)
-  // {
-  // throw new RuntimeException("Could not connect agent " + agent, e);
-  // }
-  //
-  // /*
-  // * now, one last time, make sure everyone is initialized before returning
-  // */
-  // for (ISensor sensor : sensors)
-  // try
-  // {
-  // sensor.waitForState(State.INITIALIZED);
-  // }
-  // catch (Exception e)
-  // {
-  // throw new RuntimeException("Could not initialize sensor " + sensor, e);
-  // }
-  //
-  // for (IAgent agent : agents)
-  // try
-  // {
-  // agent.waitForState(State.INITIALIZED);
-  // }
-  // catch (Exception e)
-  // {
-  // throw new RuntimeException("Could not initialize agent " + agent, e);
-  // }
-  //
-  // if (LOGGER.isDebugEnabled())
-  // LOGGER.debug("Reality, sensors and agents are ready to go!");
-  // }
-
   protected IParticipant create(Element element, String participantType)
   {
     IParticipant participant = (IParticipant) instantiate(element,
@@ -256,29 +182,51 @@ public class RealityParser
      */
     NodeList nl = sElement.getElementsByTagName("server");
     for (int i = 0; i < nl.getLength(); i++)
-    {
-      Element el = (Element) nl.item(i);
-      IMINATransportProvider transport = (IMINATransportProvider) instantiate(
-          el, "transport", "IMINATransportProvider");
-      IMINAProtocolConfiguration protocol = (IMINAProtocolConfiguration) instantiate(
-          el, "protocol", "IMINAProtocolConfiguration");
-      SocketAddress address = transport.createAddress(el
-          .getAttribute("address").split(":"));
-      participant.addServerService(transport, protocol, address);
-    }
+      try
+      {
+        Element el = (Element) nl.item(i);
+        String provider = el.getAttribute("provider");
+        INetworkingProvider netProvider = INetworkingProvider
+            .getProvider(provider);
+
+        IServerService service = netProvider.newServer();
+        ITransportProvider transport = netProvider.getTransport(el
+            .getAttribute("transport"));
+        IProtocolConfiguration protocol = netProvider.getProtocol(el
+            .getAttribute("protocol"));
+        SocketAddress address = transport.createAddress(el
+            .getAttribute("address"));
+        participant.addServerService(service, transport, protocol, address);
+      }
+      catch (Exception e)
+      {
+        LOGGER.error("Failed to instantiate server service :", e);
+      }
 
     nl = sElement.getElementsByTagName("client");
     for (int i = 0; i < nl.getLength(); i++)
-    {
-      Element el = (Element) nl.item(i);
-      IMINATransportProvider transport = (IMINATransportProvider) instantiate(
-          el, "transport", "IMINATransportProvider");
-      IMINAProtocolConfiguration protocol = (IMINAProtocolConfiguration) instantiate(
-          el, "protocol", "IMINAProtocolConfiguration");
-      SocketAddress address = transport.createAddress(el
-          .getAttribute("address").split(":"));
-      participant.addClientService(transport, protocol, address);
-    }
+      try
+      {
+        Element el = (Element) nl.item(i);
+
+        String provider = el.getAttribute("provider");
+        INetworkingProvider netProvider = INetworkingProvider
+            .getProvider(provider);
+
+        IClientService service = netProvider.newClient();
+        ITransportProvider transport = netProvider.getTransport(el
+            .getAttribute("transport"));
+        IProtocolConfiguration protocol = netProvider.getProtocol(el
+            .getAttribute("protocol"));
+
+        SocketAddress address = transport.createAddress(el
+            .getAttribute("address"));
+        participant.addClientService(service, transport, protocol, address);
+      }
+      catch (Exception e)
+      {
+        LOGGER.error("Failed to instantiate client service :", e);
+      }
   }
 
   protected ICredentials createCredentials(Element element)
