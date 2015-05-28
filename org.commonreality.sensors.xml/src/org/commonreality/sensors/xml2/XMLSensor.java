@@ -23,7 +23,7 @@ import javolution.util.FastList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.IMessage;
+import org.commonreality.net.message.IMessage;
 import org.commonreality.sensors.AbstractSensor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -286,18 +286,31 @@ public class XMLSensor extends AbstractSensor
   {
     processExpiredFrames(currentTime);
 
-    // we're still running, right? and no other request is pending?
-    if (stateMatches(State.STARTED) && !isTimeRequestPending())
+    if (!stateMatches(State.STARTED))
     {
-      double requested = getEstimatedTargetTime(currentTime);
-
       if (LOGGER.isDebugEnabled())
-        LOGGER.debug(String.format("Requesting : %.4f", requested));
-
-      requestTimeUpdate(requested);
+        LOGGER.debug(String.format("State (%s) not started, returning",
+            getState()));
+      return;
     }
-    else if (!stateMatches(State.STARTED) && LOGGER.isWarnEnabled())
-      LOGGER.warn(String.format("Skipped time update request?"));
+
+    if (isTimeRequestPending())
+    {
+      if (LOGGER.isWarnEnabled())
+        LOGGER.warn(String.format(
+            "Skipped time update request? isPending:%s state:%s",
+            isTimeRequestPending(), getState()));
+      return;
+    }
+
+    // we're still running, right? and no other request is pending?
+
+    double requested = getEstimatedTargetTime(currentTime);
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Will request : %.4f", requested));
+
+    requestTimeUpdate(requested);
   }
 
   /**
@@ -351,6 +364,7 @@ public class XMLSensor extends AbstractSensor
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(String.format("newFrameTime %.4f  priorGuess %.4f",
           nextFrameTime, _nextTimeGuess));
+
     _nextTimeGuess = nextFrameTime;
     // }
 

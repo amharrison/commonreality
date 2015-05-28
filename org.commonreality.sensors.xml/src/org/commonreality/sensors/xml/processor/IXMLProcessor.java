@@ -16,7 +16,7 @@ package org.commonreality.sensors.xml.processor;
 import java.util.Collection;
 
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.IMessage;
+import org.commonreality.net.message.IMessage;
 import org.commonreality.sensors.xml.XMLSensor;
 import org.w3c.dom.Element;
 

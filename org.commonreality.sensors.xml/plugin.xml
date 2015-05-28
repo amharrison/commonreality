@@ -2,7 +2,7 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension
-         point="org.commonreality.sensors">
+         point="org.commonreality.core.sensors">
       <sensor name="XMLSensor" class="org.commonreality.sensors.xml.XMLSensor">
          <description>General sensor that sends sensor data read from an XML file</description>
          <property

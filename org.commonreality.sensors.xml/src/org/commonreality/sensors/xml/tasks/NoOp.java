@@ -62,7 +62,7 @@ public class NoOp implements Runnable
     }
     catch (InterruptedException e)
     {
-      LOGGER.debug("interrupted ", e);
+      LOGGER.debug("interrupted. Normal during termination. ", e);
     }
     catch (ExecutionException ee)
     {

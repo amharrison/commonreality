@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.IMessage;
+import org.commonreality.net.message.IMessage;
 import org.commonreality.sensors.xml.XMLProcessor;
 import org.commonreality.sensors.xml.XMLSensor;
 import org.commonreality.time.IClock;
@@ -119,7 +119,7 @@ public class ProcessTimeFrame implements Runnable
     }
     catch (InterruptedException e)
     {
-      
+      LOGGER.warn("Interrupted, expecting termination ", e);
     }
     catch (ExecutionException ee)
     {
