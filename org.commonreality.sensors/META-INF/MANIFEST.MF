@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Common Sensors
+Bundle-SymbolicName: org.commonreality.sensors
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: org.commonreality.api;bundle-version="1.0.0",
+ org.commonreality.core;bundle-version="1.2.8",
+ org.commonreality.modalities;bundle-version="1.0.0",
+ org.commonreality.net;bundle-version="1.0.0",
+ org.commonreality.support;bundle-version="1.0.0",
+ org.commonreality.time;bundle-version="1.0.0"
+Eclipse-BuddyPolicy: registered
+Eclipse-RegisterBuddy: org.commonreality.core,
+ org.apache.log4j
+Export-Package: org.commonreality.sensors.aural,
+ org.commonreality.sensors.handlers,
+ org.commonreality.sensors.keyboard,
+ org.commonreality.sensors.keyboard.map,
+ org.commonreality.sensors.motor,
+ org.commonreality.sensors.motor.interpolator,
+ org.commonreality.sensors.speech
