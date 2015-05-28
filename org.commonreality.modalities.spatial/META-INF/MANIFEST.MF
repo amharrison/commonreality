@@ -4,8 +4,10 @@ Bundle-Name: Spatial Plug-in
 Bundle-SymbolicName: org.commonreality.modalities.spatial
 Bundle-Version: 0.3.0.qualifier
 Bundle-Vendor: org.commonreality
-Require-Bundle: org.commonreality,
- org.jactr.support
+Require-Bundle: org.commonreality.core,
+ org.commonreality.api;bundle-version="1.0.0",
+ org.commonreality.support;bundle-version="1.0.0",
+ org.commonreality.modalities;bundle-version="1.0.0"
 Export-Package: org.commonreality.modalities.spatial
 Bundle-ClassPath: spatial.jar
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
