@@ -28,10 +28,10 @@ import javolution.util.FastList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
-import org.commonreality.message.IMessage;
-import org.commonreality.message.command.object.IObjectCommand;
-import org.commonreality.message.request.object.ObjectCommandRequest;
-import org.commonreality.message.request.object.ObjectDataRequest;
+import org.commonreality.net.message.IMessage;
+import org.commonreality.net.message.command.object.IObjectCommand;
+import org.commonreality.net.message.request.object.ObjectCommandRequest;
+import org.commonreality.net.message.request.object.ObjectDataRequest;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.object.IMutableObject;
 import org.commonreality.object.ISensoryObject;
@@ -532,7 +532,7 @@ public abstract class BaseSensor extends AbstractSensor
         /*
          * perfectly normal if the sensor is interrupted
          */
-        LOGGER.debug("interrupted ", e);
+        LOGGER.warn("Interrupted, expecting termination ", e);
       }
       catch (Exception e)
       {
