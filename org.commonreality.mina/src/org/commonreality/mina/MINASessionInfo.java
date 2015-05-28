@@ -328,4 +328,11 @@ public class MINASessionInfo extends AbstractSessionInfo<IoSession>
     });
 
   }
+
+  @Override
+  public void flush() throws Exception
+  {
+    // noop
+
+  }
 }
