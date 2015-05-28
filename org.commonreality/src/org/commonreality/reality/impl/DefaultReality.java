@@ -119,6 +119,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
           {
             LOGGER.error(String.format("Exception from %s, closing. ", s), e);
           }
+          return true;
         });
       }
 
@@ -456,7 +457,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
         // pulled write out..
         try
         {
-          session.write(message);
+          session.writeAndWait(message);
         }
         catch (Exception e)
         {

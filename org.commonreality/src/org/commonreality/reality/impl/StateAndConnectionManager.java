@@ -682,7 +682,8 @@ public class StateAndConnectionManager
       /*
        * and acknowledge
        */
-      session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
+      session.writeAndWait(new ConnectionAcknowledgment(_reality
+          .getIdentifier(),
           request.getMessageId(), "Granted", identifier));
     }
     catch (Exception e)
@@ -783,6 +784,14 @@ public class StateAndConnectionManager
               LOGGER.error(String.format("Failed to forward object data"), e);
             }
         }
+      try
+      {
+        session.flush();
+      }
+      catch (Exception e)
+      {
+        LOGGER.error("Failed to flush", e);
+      }
 
       /*
        * add them to our list of accepted connections
@@ -1194,6 +1203,7 @@ public class StateAndConnectionManager
         session.write(new ObjectData(_reality.getIdentifier(), data));
         session.write(new ObjectCommand(_reality.getIdentifier(),
             IObjectCommand.Type.ADDED, identifiers));
+        session.flush();
       }
       catch (Exception e)
       {

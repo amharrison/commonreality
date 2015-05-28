@@ -18,10 +18,13 @@ public class AcknowledgmentIoFilter implements IMessageFilter
                                                 .getLog(AcknowledgmentIoFilter.class);
 
   @Override
-  public boolean accept(ISessionInfo session, Object message)
+  public boolean accept(ISessionInfo<?> session, Object message)
   {
     try
     {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Received message %s", message));
+
       if (message instanceof IAcknowledgement)
       {
         IAcknowledgement ackMsg = (IAcknowledgement) message;
@@ -37,7 +40,8 @@ public class AcknowledgmentIoFilter implements IMessageFilter
 
           sessionAcks.acknowledgementReceived(ackMsg);
         }
-
+        else if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("No session acknowledges available?"));
       }
     }
     catch (Exception e)

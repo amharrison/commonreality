@@ -456,7 +456,7 @@ public class ThinParticipant implements IParticipant
   @Override
   public void disconnect() throws Exception
   {
-
+    disconnect(false);
   }
 
   @Override

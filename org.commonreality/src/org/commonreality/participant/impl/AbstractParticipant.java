@@ -198,6 +198,7 @@ public abstract class AbstractParticipant extends ThinParticipant implements
           {
             LOGGER.error(String.format("Exception from %s, closing. ", s), e);
           }
+          return true;
         });
       }
 
@@ -251,6 +252,7 @@ public abstract class AbstractParticipant extends ThinParticipant implements
                   LOGGER.error(
                       String.format("Exception from %s, closing. ", s), e);
                 }
+                return true;
               });
         }
         catch (Exception e)
@@ -490,7 +492,8 @@ public abstract class AbstractParticipant extends ThinParticipant implements
 
       try
       {
-        session.write(message);
+        // not too efficient..
+        session.writeAndWait(message);
       }
       catch (Exception e)
       {
