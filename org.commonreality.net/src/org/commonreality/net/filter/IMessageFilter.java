@@ -8,5 +8,5 @@ import org.commonreality.net.session.ISessionInfo;
 
 public interface IMessageFilter
 {
-  public boolean accept(ISessionInfo sessionInfo, Object message);
+  public boolean accept(ISessionInfo<?> sessionInfo, Object message);
 }

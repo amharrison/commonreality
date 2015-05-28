@@ -50,5 +50,5 @@ public interface ISessionInfo<T>
 
   public void waitForDisconnect() throws InterruptedException;
 
-
+  public void flush() throws Exception;
 }

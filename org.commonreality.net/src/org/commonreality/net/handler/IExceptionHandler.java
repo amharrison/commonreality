@@ -9,5 +9,5 @@ import org.commonreality.net.session.ISessionInfo;
 public interface IExceptionHandler
 {
 
-  public void exceptionCaught(ISessionInfo<?> session, Throwable thrown);
+  public boolean exceptionCaught(ISessionInfo<?> session, Throwable thrown);
 }

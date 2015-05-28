@@ -6,6 +6,8 @@ package org.commonreality.net.handler;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.commonreality.net.session.ISessionInfo;
 
 /**
@@ -15,10 +17,12 @@ import org.commonreality.net.session.ISessionInfo;
  */
 public class MessageMultiplexer implements IMessageHandler<Object>
 {
+  static private final Log                        LOGGER    = LogFactory
+                                                                .getLog(MessageMultiplexer.class);
 
-  final private Map<Class, IMessageHandler<?>> _handlers = new HashMap<Class, IMessageHandler<?>>();
+  final private Map<Class<?>, IMessageHandler<?>> _handlers = new HashMap<Class<?>, IMessageHandler<?>>();
 
-  final private IMessageHandler<Object>        _fallThrough;
+  final private IMessageHandler<Object>           _fallThrough;
 
   /**
    * @param fallThrough
@@ -29,16 +33,39 @@ public class MessageMultiplexer implements IMessageHandler<Object>
     _fallThrough = fallThrough;
   }
 
-  public <M> void add(Class<M> clazz, IMessageHandler<M> handler)
+  public void add(Class<?> clazz, IMessageHandler<?> handler)
   {
     _handlers.put(clazz, handler);
   }
 
+  public IMessageHandler<?> remove(Class<?> clazz)
+  {
+    return _handlers.remove(clazz);
+  }
+
+  @SuppressWarnings("unchecked")
   @Override
-  public void accept(ISessionInfo t, Object u)
+  public void accept(ISessionInfo<?> t, Object u)
   {
     IMessageHandler<Object> handler = (IMessageHandler<Object>) _handlers.get(u
         .getClass());
+
+    if (handler == null)
+    {
+      Class<?> messageClass = u.getClass();
+
+      for (Map.Entry<Class<?>, IMessageHandler<?>> entry : _handlers.entrySet())
+        if (entry.getKey().isAssignableFrom(messageClass))
+        {
+          handler = (IMessageHandler<Object>) entry.getValue();
+          _handlers.put(messageClass, handler);
+          break;
+        }
+    }
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Got %s routing to %s", u, handler));
+
     if (handler != null)
       handler.accept(t, u);
     else
