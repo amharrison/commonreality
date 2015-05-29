@@ -53,11 +53,20 @@ public class MessageMultiplexer implements IMessageHandler<Object>
     if (handler == null)
     {
       Class<?> messageClass = u.getClass();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format(
+            "Could not find handler for %s, looking for compatible handler",
+            messageClass.getName()));
 
       for (Map.Entry<Class<?>, IMessageHandler<?>> entry : _handlers.entrySet())
         if (entry.getKey().isAssignableFrom(messageClass))
         {
           handler = (IMessageHandler<Object>) entry.getValue();
+
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("%s for %s appears to be compatible",
+                handler.getClass().getName(), entry.getKey()));
+
           _handlers.put(messageClass, handler);
           break;
         }
