@@ -16,3 +16,4 @@ Export-Package: org.commonreality.sensors.xml,
  org.commonreality.sensors.xml2
 Eclipse-BuddyPolicy: registered
 Eclipse-RegisterBuddy: org.jactr, org.jactr.io, org.commonreality.core, org.apache.log4j, org.apache.commons.logging
+Bundle-ClassPath: .
