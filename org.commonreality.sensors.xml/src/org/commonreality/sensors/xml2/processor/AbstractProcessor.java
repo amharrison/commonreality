@@ -28,6 +28,7 @@ import org.commonreality.net.message.IMessage;
 import org.commonreality.net.message.command.object.IObjectCommand;
 import org.commonreality.net.message.request.object.ObjectCommandRequest;
 import org.commonreality.net.message.request.object.ObjectDataRequest;
+import org.commonreality.object.IAgentObject;
 import org.commonreality.object.IMutableObject;
 import org.commonreality.object.ISimulationObject;
 import org.commonreality.object.delta.DeltaTracker;
@@ -89,6 +90,27 @@ public abstract class AbstractProcessor<O extends ISimulationObject, L extends I
 
         Element childElement = (Element) child;
         String tagName = childElement.getTagName();
+
+        String forWhichAgent = childElement.getAttribute("for");
+        if (forWhichAgent != null && forWhichAgent.length() > 0)
+        {
+          IAgentObject ao = sensor.getAgentObjectManager().get(agentID);
+          String agentName = (String) ao.getProperty("name");
+          if (agentName == null)
+            LOGGER.error("Agent name was not set for " + agentID);
+          else if (!agentName.equals(forWhichAgent))
+          {
+            if (LOGGER.isWarnEnabled())
+              LOGGER
+                  .warn(String
+                      .format(
+                          "agentId %s does not match targeted name %s, skipping processing",
+                          agentName,
+                  forWhichAgent));
+            
+            continue;
+          }
+        }
 
         /**
          * remove all that match a pattern
@@ -334,8 +356,8 @@ public abstract class AbstractProcessor<O extends ISimulationObject, L extends I
     String name = element.getAttribute("name");
     try
     {
-      realObject.setProperty(name, Boolean.valueOf(element
-          .getAttribute("value")));
+      realObject.setProperty(name,
+          Boolean.valueOf(element.getAttribute("value")));
     }
     catch (Exception e)
     {
