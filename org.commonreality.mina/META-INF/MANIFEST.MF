@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mina Plug-in
-Bundle-SymbolicName: org.commonreality.mina
+Bundle-SymbolicName: org.commonreality.mina;singleton:=true
 Bundle-Version: 1.2.0.qualifier
 Bundle-Vendor: jactr.org
 Require-Bundle: org.commonreality.mina.core,
