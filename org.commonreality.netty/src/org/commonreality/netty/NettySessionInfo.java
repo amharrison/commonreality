@@ -150,6 +150,7 @@ public class NettySessionInfo extends
   {
     if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("closing"));
     // hold onto this for waiting..
+    flush();
     _closing = getRawSession().close();
   }
 

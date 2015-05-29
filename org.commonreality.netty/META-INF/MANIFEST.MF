@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Netty CR bridge
-Bundle-SymbolicName: org.commonreality.netty
+Bundle-SymbolicName: org.commonreality.netty;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.commonreality.netty.core;bundle-version="1.0.0",
@@ -15,3 +15,5 @@ Export-Package: org.commonreality.netty,
  org.commonreality.netty.protocol,
  org.commonreality.netty.service,
  org.commonreality.netty.transport
+Bundle-ClassPath: .
+Bundle-ActivationPolicy: lazy
