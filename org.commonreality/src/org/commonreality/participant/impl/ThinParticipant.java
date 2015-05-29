@@ -422,7 +422,7 @@ public class ThinParticipant implements IParticipant
     return _clock;
   }
 
-  protected void setClock(IClock clock)
+  public void setClock(IClock clock)
   {
     _clock = clock;
   }
