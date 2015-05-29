@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modalities
-Bundle-SymbolicName: org.commonreality.modalities
+Bundle-SymbolicName: org.commonreality.modalities;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.commonreality.api;bundle-version="1.0.0",
@@ -13,3 +13,4 @@ Export-Package: org.commonreality.modalities,
  org.commonreality.modalities.visual,
  org.commonreality.modalities.visual.geom,
  org.commonreality.modalities.vocal
+Bundle-ClassPath: .
