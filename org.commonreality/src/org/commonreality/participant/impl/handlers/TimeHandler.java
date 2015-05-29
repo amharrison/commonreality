@@ -16,17 +16,16 @@ package org.commonreality.participant.impl.handlers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.net.handler.IMessageHandler;
-import org.commonreality.net.message.command.time.ITimeCommand;
+import org.commonreality.net.message.command.time.TimeCommand;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.IParticipant;
-import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.time.IClock;
 import org.commonreality.time.impl.NetworkedClock.NetworkedAuthoritativeClock;
 
 /**
  * @author developer
  */
-public class TimeHandler implements IMessageHandler<ITimeCommand>
+public class TimeHandler implements IMessageHandler<TimeCommand>
 {
   /**
    * logger definition
@@ -67,7 +66,7 @@ public class TimeHandler implements IMessageHandler<ITimeCommand>
   // }
 
   @Override
-  public void accept(ISessionInfo t, ITimeCommand time)
+  public void accept(ISessionInfo<?> t, TimeCommand time)
   {
     IClock clock = _participant.getClock();
     NetworkedAuthoritativeClock auth = (NetworkedAuthoritativeClock) clock
@@ -83,8 +82,10 @@ public class TimeHandler implements IMessageHandler<ITimeCommand>
      * we can pull this off of the periodic once we've confirmed Netty's
      * behavior
      */
-    AbstractParticipant.getPeriodicExecutor().execute(
-        () -> auth.timeChangeReceived(time.getTime()));
+    // AbstractParticipant.getPeriodicExecutor().execute(
+    // () ->
+    auth.timeChangeReceived(time.getTime());
+    // );
 
   }
 

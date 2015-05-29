@@ -19,7 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
-import org.commonreality.net.message.request.object.INewIdentifierAcknowledgement;
+import org.commonreality.net.message.request.object.NewIdentifierAcknowledgement;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.object.manager.IRequestableObjectManager;
 
@@ -29,7 +29,7 @@ import org.commonreality.object.manager.IRequestableObjectManager;
  * @author developer
  */
 public class NewIdentifierHandler implements
-    IMessageHandler<INewIdentifierAcknowledgement>
+    IMessageHandler<NewIdentifierAcknowledgement>
 {
   /**
    * logger definition
@@ -67,7 +67,7 @@ public class NewIdentifierHandler implements
   // }
 
   @Override
-  public void accept(ISessionInfo t, INewIdentifierAcknowledgement ack)
+  public void accept(ISessionInfo<?> t, NewIdentifierAcknowledgement ack)
   {
     Collection<IIdentifier> newIdentifiers = ack.getIdentifiers();
     if (LOGGER.isDebugEnabled())

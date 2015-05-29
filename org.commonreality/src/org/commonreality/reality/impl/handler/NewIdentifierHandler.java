@@ -20,8 +20,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
-import org.commonreality.net.message.request.object.INewIdentifierRequest;
 import org.commonreality.net.message.request.object.NewIdentifierAcknowledgement;
+import org.commonreality.net.message.request.object.NewIdentifierRequest;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.impl.handlers.GeneralObjectHandler;
 import org.commonreality.reality.IReality;
@@ -31,7 +31,7 @@ import org.commonreality.reality.impl.StateAndConnectionManager;
  * @author developer
  */
 public class NewIdentifierHandler extends AbstractObjectInformationHandler
-    implements IMessageHandler<INewIdentifierRequest>
+    implements IMessageHandler<NewIdentifierRequest>
 {
 
   static private final Log LOGGER = LogFactory
@@ -61,7 +61,7 @@ public class NewIdentifierHandler extends AbstractObjectInformationHandler
   // }
 
   @Override
-  public void accept(ISessionInfo t, INewIdentifierRequest arg1)
+  public void accept(ISessionInfo<?> t, NewIdentifierRequest arg1)
   {
     IIdentifier source = arg1.getSource();
     IReality reality = getParticipant();
@@ -72,8 +72,10 @@ public class NewIdentifierHandler extends AbstractObjectInformationHandler
 
     try
     {
-      t.write(new NewIdentifierAcknowledgement(reality.getIdentifier(), arg1
+      t.write(new NewIdentifierAcknowledgement(reality.getIdentifier(),
+          arg1
           .getMessageId(), ids));
+      t.flush();
     }
     catch (Exception e)
     {

@@ -605,7 +605,7 @@ public class StateAndConnectionManager
           LOGGER.debug(String.format("Credential are invalid. Rejecting %s",
               session));
 
-        session.writeAndWait(new ConnectionAcknowledgment(_reality
+        session.write(new ConnectionAcknowledgment(_reality
             .getIdentifier(), request.getMessageId(), "Invalid credentials"));
         session.close();
         return;
@@ -621,7 +621,7 @@ public class StateAndConnectionManager
           LOGGER.debug(String.format(
               "Credentials are already in use. Rejecing %s", session));
 
-        session.writeAndWait(new ConnectionAcknowledgment(_reality
+        session.write(new ConnectionAcknowledgment(_reality
             .getIdentifier(), request.getMessageId(),
             "Credentials already in use"));
         session.close();
@@ -637,7 +637,7 @@ public class StateAndConnectionManager
         if (LOGGER.isDebugEnabled())
           LOGGER.debug(String.format("Spoofing?. Rejecing %s", session));
 
-        session.writeAndWait(new ConnectionAcknowledgment(_reality
+        session.write(new ConnectionAcknowledgment(_reality
             .getIdentifier(), request.getMessageId(),
             "Addressing spoof detected"));
         session.close();
@@ -653,7 +653,7 @@ public class StateAndConnectionManager
           LOGGER.debug(String.format("Simulation already stopped. Rejecing %s",
               session));
 
-        session.writeAndWait(new ConnectionAcknowledgment(_reality
+        session.write(new ConnectionAcknowledgment(_reality
             .getIdentifier(), request.getMessageId(),
             "Simulation has already stopped, cannot accept new connections"));
         session.close();
@@ -682,9 +682,10 @@ public class StateAndConnectionManager
       /*
        * and acknowledge
        */
-      session.writeAndWait(new ConnectionAcknowledgment(_reality
+      session.write(new ConnectionAcknowledgment(_reality
           .getIdentifier(),
           request.getMessageId(), "Granted", identifier));
+      session.flush();
     }
     catch (Exception e)
     {

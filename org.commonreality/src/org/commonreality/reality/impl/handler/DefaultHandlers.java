@@ -12,7 +12,7 @@ import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.notification.NotificationMessage;
 import org.commonreality.net.message.request.connect.ConnectionRequest;
-import org.commonreality.net.message.request.object.NewIdentifierAcknowledgement;
+import org.commonreality.net.message.request.object.NewIdentifierRequest;
 import org.commonreality.net.message.request.object.ObjectCommandRequest;
 import org.commonreality.net.message.request.object.ObjectDataRequest;
 import org.commonreality.net.message.request.time.RequestTime;
@@ -60,7 +60,7 @@ public class DefaultHandlers
     handlers.put(ObjectDataRequest.class, new ObjectDataHandler(reality,
         manager, goh));
 
-    handlers.put(NewIdentifierAcknowledgement.class, new NewIdentifierHandler(
+    handlers.put(NewIdentifierRequest.class, new NewIdentifierHandler(
         reality, manager, goh));
 
     // notification manager

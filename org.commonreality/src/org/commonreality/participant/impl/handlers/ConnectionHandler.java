@@ -17,7 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
-import org.commonreality.net.message.request.connect.IConnectionAcknowledgement;
+import org.commonreality.net.message.request.connect.ConnectionAcknowledgment;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.participant.impl.AbstractParticipant;
 
@@ -25,7 +25,7 @@ import org.commonreality.participant.impl.AbstractParticipant;
  * @author developer
  */
 public class ConnectionHandler implements
-    IMessageHandler<IConnectionAcknowledgement>
+    IMessageHandler<ConnectionAcknowledgment>
 {
   /**
    * logger definition
@@ -41,7 +41,7 @@ public class ConnectionHandler implements
   }
 
   @Override
-  public void accept(ISessionInfo t, IConnectionAcknowledgement ack)
+  public void accept(ISessionInfo<?> t, ConnectionAcknowledgment ack)
   {
     IIdentifier id = ack.getAssignedIdentifier();
 

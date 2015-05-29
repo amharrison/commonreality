@@ -23,7 +23,7 @@ import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.command.object.IObjectCommand;
 import org.commonreality.net.message.command.object.ObjectCommand;
 import org.commonreality.net.message.impl.BaseAcknowledgementMessage;
-import org.commonreality.net.message.request.object.IObjectCommandRequest;
+import org.commonreality.net.message.request.object.ObjectCommandRequest;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.object.IAgentObject;
 import org.commonreality.object.IMutableObject;
@@ -37,7 +37,7 @@ import org.commonreality.reality.impl.StateAndConnectionManager;
  * @author developer
  */
 public class ObjectCommandHandler extends AbstractObjectInformationHandler
-    implements IMessageHandler<IObjectCommandRequest>
+    implements IMessageHandler<ObjectCommandRequest>
 {
   /**
    * logger definition
@@ -60,7 +60,7 @@ public class ObjectCommandHandler extends AbstractObjectInformationHandler
   }
 
   @Override
-  public void accept(ISessionInfo session, IObjectCommandRequest arg1)
+  public void accept(ISessionInfo<?> session, ObjectCommandRequest arg1)
   {
     IIdentifier from = arg1.getSource();
     IIdentifier to = arg1.getDestination();
@@ -95,8 +95,10 @@ public class ObjectCommandHandler extends AbstractObjectInformationHandler
      */
     try
     {
-      session.write(new BaseAcknowledgementMessage(reality.getIdentifier(),
+      session.write(new BaseAcknowledgementMessage(reality
+          .getIdentifier(),
           arg1.getMessageId()));
+      session.flush();
     }
     catch (Exception e)
     {

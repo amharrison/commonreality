@@ -26,9 +26,13 @@ import org.commonreality.identifier.impl.BasicIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.IAcknowledgement;
 import org.commonreality.net.message.IMessage;
+import org.commonreality.net.message.command.ICommand;
 import org.commonreality.net.message.command.time.TimeCommand;
 import org.commonreality.net.message.credentials.ICredentials;
+import org.commonreality.net.message.notification.NotificationMessage;
 import org.commonreality.net.message.request.IRequest;
+import org.commonreality.net.message.request.connect.ConnectionAcknowledgment;
+import org.commonreality.net.message.request.object.NewIdentifierAcknowledgement;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.net.session.ISessionListener;
 import org.commonreality.object.identifier.BasicSensoryIdentifier;
@@ -457,7 +461,9 @@ public class DefaultReality extends AbstractParticipant implements IReality
         // pulled write out..
         try
         {
-          session.writeAndWait(message);
+          session.write(message);
+
+          if (shouldFlush(message)) session.flush();
         }
         catch (Exception e)
         {
@@ -474,6 +480,16 @@ public class DefaultReality extends AbstractParticipant implements IReality
     if (rtn == null) rtn = EMPTY_ACK;
 
     return rtn;
+  }
+
+  @Override
+  protected boolean shouldFlush(Object message)
+  {
+    boolean flush = message instanceof ConnectionAcknowledgment
+        || message instanceof ICommand
+        || message instanceof NewIdentifierAcknowledgement
+        || message instanceof NotificationMessage;
+    return flush;
   }
 
   public Future<IAcknowledgement> send(IIdentifier identifier, IMessage message)

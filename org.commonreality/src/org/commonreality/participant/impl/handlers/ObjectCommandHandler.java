@@ -16,7 +16,7 @@ package org.commonreality.participant.impl.handlers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.net.handler.IMessageHandler;
-import org.commonreality.net.message.command.object.IObjectCommand;
+import org.commonreality.net.message.command.object.ObjectCommand;
 import org.commonreality.net.session.ISessionInfo;
 
 /**
@@ -25,7 +25,7 @@ import org.commonreality.net.session.ISessionInfo;
  * @author developer
  */
 public class ObjectCommandHandler implements
- IMessageHandler<IObjectCommand>
+ IMessageHandler<ObjectCommand>
 {
   /**
    * logger definition
@@ -63,7 +63,7 @@ public class ObjectCommandHandler implements
   // }
 
   @Override
-  public void accept(ISessionInfo t, IObjectCommand objectCommand)
+  public void accept(ISessionInfo<?> t, ObjectCommand objectCommand)
   {
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(objectCommand.getType() + " : " +

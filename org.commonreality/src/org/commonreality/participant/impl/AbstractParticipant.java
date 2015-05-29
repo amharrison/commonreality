@@ -30,9 +30,12 @@ import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.IAcknowledgement;
 import org.commonreality.net.message.IMessage;
+import org.commonreality.net.message.notification.NotificationMessage;
 import org.commonreality.net.message.request.IRequest;
 import org.commonreality.net.message.request.connect.ConnectionRequest;
 import org.commonreality.net.message.request.object.IObjectDataRequest;
+import org.commonreality.net.message.request.object.NewIdentifierRequest;
+import org.commonreality.net.message.request.time.RequestTime;
 import org.commonreality.net.protocol.IProtocolConfiguration;
 import org.commonreality.net.service.IClientService;
 import org.commonreality.net.service.INetworkService;
@@ -493,7 +496,10 @@ public abstract class AbstractParticipant extends ThinParticipant implements
       try
       {
         // not too efficient..
-        session.writeAndWait(message);
+        session.write(message);
+
+        // flush when we send a time request?
+        if (shouldFlush(message)) session.flush();
       }
       catch (Exception e)
       {
@@ -510,4 +516,13 @@ public abstract class AbstractParticipant extends ThinParticipant implements
     return rtn;
   }
 
+  protected boolean shouldFlush(Object message)
+  {
+    boolean flush = message instanceof RequestTime
+        || message instanceof ConnectionRequest
+        || message instanceof NewIdentifierRequest
+        || message instanceof NotificationMessage
+        || message instanceof IRequest;
+    return flush;
+  }
 }

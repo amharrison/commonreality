@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.command.control.ControlAcknowledgement;
+import org.commonreality.net.message.command.control.ControlCommand;
 import org.commonreality.net.message.command.control.IControlCommand;
 import org.commonreality.net.message.command.control.IControlCommand.State;
 import org.commonreality.net.session.ISessionInfo;
@@ -28,7 +29,7 @@ import org.commonreality.participant.impl.AbstractParticipant;
 /**
  * @author developer
  */
-public class ControlHandler implements IMessageHandler<IControlCommand>
+public class ControlHandler implements IMessageHandler<ControlCommand>
 {
   /**
    * logger definition
@@ -174,7 +175,7 @@ public class ControlHandler implements IMessageHandler<IControlCommand>
   // }
 
   @Override
-  public void accept(ISessionInfo t, IControlCommand command)
+  public void accept(ISessionInfo<?> t, ControlCommand command)
   {
     State state = command.getState();
     if (LOGGER.isDebugEnabled())
@@ -188,9 +189,9 @@ public class ControlHandler implements IMessageHandler<IControlCommand>
         LOGGER.debug("State has been set to " + state + ", acknowleding "
             + command.getMessageId());
 
-      t.writeAndWait(new ControlAcknowledgement(_participant.getIdentifier(),
+      t.write(new ControlAcknowledgement(_participant.getIdentifier(),
           command.getMessageId(), state));
-
+      t.flush();
       /*
        * we have to acknowledge shutdown before we actually do it.
        */
@@ -200,8 +201,9 @@ public class ControlHandler implements IMessageHandler<IControlCommand>
     {
       try
       {
-        t.writeAndWait(new ControlAcknowledgement(_participant.getIdentifier(),
+        t.write(new ControlAcknowledgement(_participant.getIdentifier(),
             command.getMessageId(), e));
+        t.flush();
       }
       catch (Exception e2)
       {

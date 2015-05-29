@@ -18,9 +18,8 @@ import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.impl.BaseAcknowledgementMessage;
-import org.commonreality.net.message.request.time.IRequestTime;
+import org.commonreality.net.message.request.time.RequestTime;
 import org.commonreality.net.session.ISessionInfo;
-import org.commonreality.participant.impl.AbstractParticipant;
 import org.commonreality.reality.IReality;
 import org.commonreality.time.IAuthoritativeClock;
 import org.commonreality.time.IClock;
@@ -28,7 +27,7 @@ import org.commonreality.time.IClock;
 /**
  * @author developer
  */
-public class TimeHandler implements IMessageHandler<IRequestTime>
+public class TimeHandler implements IMessageHandler<RequestTime>
 {
   /**
    * logger definition
@@ -48,7 +47,7 @@ public class TimeHandler implements IMessageHandler<IRequestTime>
   // }
 
   @Override
-  public void accept(ISessionInfo session, IRequestTime timeRequest)
+  public void accept(ISessionInfo<?> session, RequestTime timeRequest)
   {
 
     IIdentifier id = timeRequest.getSource();
@@ -58,7 +57,7 @@ public class TimeHandler implements IMessageHandler<IRequestTime>
      */
     try
     {
-      session.write(new BaseAcknowledgementMessage(id, timeRequest
+      session.writeAndWait(new BaseAcknowledgementMessage(id, timeRequest
           .getMessageId()));
     }
     catch (Exception e)
@@ -82,8 +81,10 @@ public class TimeHandler implements IMessageHandler<IRequestTime>
       /*
        * we can move this off exectuor on confirmation of Nettys good behavior
        */
-      AbstractParticipant.getPeriodicExecutor().execute(
-          () -> auth.requestAndWaitForTime(when, id));
+      // AbstractParticipant.getPeriodicExecutor().execute(
+      // () ->
+      auth.requestAndWaitForTime(when, id);
+      // );
     }
     catch (IllegalArgumentException iae)
     {

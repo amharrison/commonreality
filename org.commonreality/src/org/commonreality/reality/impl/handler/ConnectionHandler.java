@@ -14,14 +14,14 @@
 package org.commonreality.reality.impl.handler;
 
 import org.commonreality.net.handler.IMessageHandler;
-import org.commonreality.net.message.request.connect.IConnectionRequest;
+import org.commonreality.net.message.request.connect.ConnectionRequest;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.reality.impl.StateAndConnectionManager;
 
 /**
  * @author developer
  */
-public class ConnectionHandler implements IMessageHandler<IConnectionRequest>
+public class ConnectionHandler implements IMessageHandler<ConnectionRequest>
 {
 
   private StateAndConnectionManager _manager;
@@ -38,7 +38,7 @@ public class ConnectionHandler implements IMessageHandler<IConnectionRequest>
   // }
 
   @Override
-  public void accept(ISessionInfo t, IConnectionRequest request)
+  public void accept(ISessionInfo<?> t, ConnectionRequest request)
   {
     _manager.participantConnected(t, request);
   }

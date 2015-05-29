@@ -70,14 +70,17 @@ public abstract class RequestableObjectManagerDelegate
     List<IIdentifier> keyedIdentifiers = getKeyedCollection(key);
 
     IIdentifier rtn = null;
+    boolean mustRequest = false;
+    synchronized (keyedIdentifiers)
+    {
+      // don't actually request from within the sync.
+      mustRequest = keyedIdentifiers.size() == 0;
+    }
+
+    if (mustRequest) request(key);
 
     synchronized (keyedIdentifiers)
     {
-      /*
-       * request new IDs if necessary
-       */
-      if (keyedIdentifiers.size() == 0) request(key);
-
       try
       {
         while (keyedIdentifiers.size() == 0)
@@ -91,8 +94,11 @@ public abstract class RequestableObjectManagerDelegate
 
       if (keyedIdentifiers.size() != 0) rtn = keyedIdentifiers.remove(0);
 
-      if (keyedIdentifiers.size() <= _requestMore) request(key);
+      mustRequest = keyedIdentifiers.size() <= _requestMore;
     }
+    // don't request from within the synch
+    if (mustRequest) request(key);
+
     if (LOGGER.isDebugEnabled())
       LOGGER.debug("Returning new requested id " + rtn);
     return rtn;
