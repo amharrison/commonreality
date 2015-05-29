@@ -26,3 +26,4 @@ Export-Package: org.commonreality.sensors.swing,
  org.commonreality.sensors.swing.jactr.io,
  org.commonreality.sensors.swing.key,
  org.commonreality.sensors.swing.processors
+Bundle-ClassPath: .
