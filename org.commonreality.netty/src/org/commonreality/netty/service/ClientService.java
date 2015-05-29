@@ -21,6 +21,7 @@ import org.commonreality.net.session.ISessionListener;
 import org.commonreality.net.transport.ITransportProvider;
 import org.commonreality.netty.impl.NettyListener;
 import org.commonreality.netty.impl.NettyMultiplexer;
+import org.commonreality.netty.transport.NettyConfig;
 
 public class ClientService extends AbstractNettyNetworkService implements
     IClientService
@@ -45,11 +46,14 @@ public class ClientService extends AbstractNettyNetworkService implements
       ISessionListener defaultListener, ThreadFactory threadFactory)
   {
     _multiplexer = createMultiplexer(defaultHandlers);
-    _workerGroup = createWorkerGroup(1, threadFactory);
+
+    NettyConfig config = (NettyConfig) transport.configureClient();
+
+    _workerGroup = config.getClientSupplier().apply(1, threadFactory);
 
     _bootstrap = new Bootstrap();
     _bootstrap.group(_workerGroup);
-    _bootstrap.channel((Class<? extends Channel>) transport.configureClient());
+    _bootstrap.channel(config.getClientClass());
     // _bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     _bootstrap.handler(new ChannelInitializer<Channel>() {
 

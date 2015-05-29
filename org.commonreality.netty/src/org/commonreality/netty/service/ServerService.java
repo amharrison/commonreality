@@ -23,6 +23,7 @@ import org.commonreality.net.session.ISessionListener;
 import org.commonreality.net.transport.ITransportProvider;
 import org.commonreality.netty.impl.NettyListener;
 import org.commonreality.netty.impl.NettyMultiplexer;
+import org.commonreality.netty.transport.NettyConfig;
 
 public class ServerService extends AbstractNettyNetworkService implements
     IServerService
@@ -48,15 +49,17 @@ public class ServerService extends AbstractNettyNetworkService implements
 
     _multiplexer = createMultiplexer(defaultHandlers);
 
-    _serverGroup = createServerGroup(threadFactory);
-    _workerGroup = createWorkerGroup(4, threadFactory);
+    NettyConfig config = (NettyConfig) transport.configureServer();
+
+    _serverGroup = config.getServerSupplier().apply(1, threadFactory);
+    _workerGroup = config.getClientSupplier().apply(4, threadFactory);
 
     _bootstrap = new ServerBootstrap();
     try
     {
       _bootstrap
           .group(_serverGroup, _workerGroup)
-          .channel((Class<? extends ServerChannel>) transport.configureServer())
+          .channel(config.getServerClass())
           .handler(new ChannelInitializer<ServerChannel>() {
 
             @Override

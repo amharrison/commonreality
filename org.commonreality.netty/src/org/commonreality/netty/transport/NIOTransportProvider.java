@@ -13,12 +13,14 @@
  */
 package org.commonreality.netty.transport;
 
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,8 +39,6 @@ public class NIOTransportProvider implements ITransportProvider
    */
   static private final Log LOGGER = LogFactory
                                       .getLog(NIOTransportProvider.class);
-
-
 
   /**
    * possible options: int,String port String hostname, int port InetAddress ip,
@@ -62,8 +62,8 @@ public class NIOTransportProvider implements ITransportProvider
 
     if (port < 0)
       throw new IllegalArgumentException(
-          "port must be greater than or equal to zero. got " + port + " form " +
-              last);
+          "port must be greater than or equal to zero. got " + port + " form "
+              + last);
 
     if (last == first) return new InetSocketAddress(port);
 
@@ -76,19 +76,28 @@ public class NIOTransportProvider implements ITransportProvider
     if (first instanceof InetAddress)
       return new InetSocketAddress((InetAddress) first, port);
 
-    throw new IllegalArgumentException("Could not get host information from " +
-        first);
+    throw new IllegalArgumentException("Could not get host information from "
+        + first);
   }
 
   @Override
   public Object configureServer()
   {
-    return NioServerSocketChannel.class;
+    return new NettyConfig(NioServerSocketChannel.class, (n, tf) -> {
+      return new NioEventLoopGroup(1, Executors.newSingleThreadExecutor(tf));
+    }, null, (n, tf) -> {
+      return new NioEventLoopGroup(n, Executors.newCachedThreadPool(tf));
+    });
+
   }
 
   @Override
   public Object configureClient()
   {
-    return NioSocketChannel.class;
+    return new NettyConfig(NioServerSocketChannel.class, (n, tf) -> {
+      return null;
+    }, NioSocketChannel.class, (n, tf) -> {
+      return new NioEventLoopGroup(n, Executors.newCachedThreadPool(tf));
+    });
   }
 }

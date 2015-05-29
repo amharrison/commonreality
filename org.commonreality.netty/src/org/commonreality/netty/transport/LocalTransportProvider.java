@@ -3,11 +3,14 @@ package org.commonreality.netty.transport;
 /*
  * default logging
  */
+import io.netty.channel.DefaultEventLoop;
+import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 
 import java.net.SocketAddress;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,13 +32,32 @@ public class LocalTransportProvider implements ITransportProvider
   @Override
   public Object configureServer()
   {
-    return LocalServerChannel.class;
+    return new NettyConfig(
+        LocalServerChannel.class,
+        (n, tf) -> {
+          return new DefaultEventLoopGroup(1, Executors
+              .newSingleThreadExecutor(tf));
+        },
+        null,
+        (n, tf) -> {
+          if (n == 1)
+            return new DefaultEventLoop(Executors.newSingleThreadExecutor(tf));
+
+          return new DefaultEventLoopGroup(n, Executors.newCachedThreadPool(tf));
+        });
   }
 
   @Override
   public Object configureClient()
   {
-    return LocalChannel.class;
+    return new NettyConfig(null, (n, tf) -> {
+      return null;
+    }, LocalChannel.class, (n, tf) -> {
+      if (n == 1)
+        return new DefaultEventLoop(Executors.newSingleThreadExecutor(tf));
+
+      return new DefaultEventLoopGroup(n, Executors.newCachedThreadPool(tf));
+    });
   }
 
   public SocketAddress createAddress(Object... args)

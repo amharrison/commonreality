@@ -4,11 +4,8 @@ package org.commonreality.netty.service;
  * default logging
  */
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,20 +23,7 @@ public abstract class AbstractNettyNetworkService implements INetworkService
 
   protected MessageMultiplexer _multiplexer;
 
-  protected EventLoopGroup createWorkerGroup(int numClients,
-      ThreadFactory threadFactory)
-  {
-    EventLoopGroup elg = new NioEventLoopGroup(numClients,
-        Executors.newCachedThreadPool(threadFactory));
-    return elg;
-  }
 
-  protected EventLoopGroup createServerGroup(ThreadFactory threadFactory)
-  {
-    EventLoopGroup elg = new NioEventLoopGroup(1,
-        Executors.newSingleThreadExecutor(threadFactory));
-    return elg;
-  }
 
   protected MessageMultiplexer createMultiplexer(
       Map<Class<?>, IMessageHandler<?>> defaultHandlers)
