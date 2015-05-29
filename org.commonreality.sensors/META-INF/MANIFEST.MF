@@ -20,3 +20,4 @@ Export-Package: org.commonreality.sensors.aural,
  org.commonreality.sensors.motor,
  org.commonreality.sensors.motor.interpolator,
  org.commonreality.sensors.speech
+Bundle-ClassPath: .
