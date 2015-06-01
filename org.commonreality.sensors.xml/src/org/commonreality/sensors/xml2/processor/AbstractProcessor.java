@@ -100,9 +100,9 @@ public abstract class AbstractProcessor<O extends ISimulationObject, L extends I
             LOGGER.error("Agent name was not set for " + agentID);
           else if (!agentName.equals(forWhichAgent))
           {
-            if (LOGGER.isWarnEnabled())
+            if (LOGGER.isDebugEnabled())
               LOGGER
-                  .warn(String
+                  .debug(String
                       .format(
                           "agentId %s does not match targeted name %s, skipping processing",
                           agentName,
