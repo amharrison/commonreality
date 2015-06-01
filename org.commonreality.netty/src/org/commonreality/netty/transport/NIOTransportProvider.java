@@ -94,9 +94,7 @@ public class NIOTransportProvider implements ITransportProvider
   @Override
   public Object configureClient()
   {
-    return new NettyConfig(NioServerSocketChannel.class, (n, tf) -> {
-      return null;
-    }, NioSocketChannel.class, (n, tf) -> {
+    return new NettyConfig(null, null, NioSocketChannel.class, (n, tf) -> {
       return new NioEventLoopGroup(n, Executors.newCachedThreadPool(tf));
     });
   }

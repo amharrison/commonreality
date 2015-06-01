@@ -50,9 +50,7 @@ public class LocalTransportProvider implements ITransportProvider
   @Override
   public Object configureClient()
   {
-    return new NettyConfig(null, (n, tf) -> {
-      return null;
-    }, LocalChannel.class, (n, tf) -> {
+    return new NettyConfig(null, null, LocalChannel.class, (n, tf) -> {
       if (n == 1)
         return new DefaultEventLoop(Executors.newSingleThreadExecutor(tf));
 
