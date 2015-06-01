@@ -15,8 +15,8 @@ package org.commonreality.net.message.command.control;
 
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.message.IMessage;
-import org.commonreality.net.message.command.control.IControlCommand.State;
 import org.commonreality.net.message.impl.BaseAcknowledgementMessage;
+import org.commonreality.participant.IParticipant;
 
 /**
  * @author developer
@@ -33,7 +33,7 @@ public class ControlAcknowledgement extends BaseAcknowledgementMessage
 
   private Throwable        _thrown;
 
-  private State            _state;
+  private IParticipant.State _state;
 
   /**
    * @param source
@@ -47,7 +47,7 @@ public class ControlAcknowledgement extends BaseAcknowledgementMessage
   }
 
   public ControlAcknowledgement(IIdentifier source, long requestedId,
-      State state)
+      IParticipant.State state)
   {
     this(source, requestedId, (Throwable) null);
     _state = state;
@@ -74,7 +74,7 @@ public class ControlAcknowledgement extends BaseAcknowledgementMessage
   /**
    * @see org.commonreality.net.message.command.control.IControlAcknowledgement#getState()
    */
-  public State getState()
+  public IParticipant.State getState()
   {
     return _state;
   }

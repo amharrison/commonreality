@@ -14,7 +14,7 @@
 package org.commonreality.net.message.command.control;
 
 import org.commonreality.net.message.IAcknowledgement;
-import org.commonreality.net.message.command.control.IControlCommand.State;
+import org.commonreality.participant.IParticipant;
 
 /**
  * @author developer
@@ -23,5 +23,5 @@ public interface IControlAcknowledgement extends IAcknowledgement
 {
   public Throwable getException();
 
-  public State getState();
+  public IParticipant.State getState();
 }
