@@ -17,6 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.filter.IMessageFilter;
 import org.commonreality.net.handler.IExceptionHandler;
 import org.commonreality.net.handler.IMessageHandler;
@@ -28,6 +29,7 @@ import org.commonreality.net.transform.IMessageTransfromer;
 import org.commonreality.netty.impl.NettyListener;
 import org.commonreality.netty.impl.NettyMessageFilter;
 import org.commonreality.netty.impl.NettyMessageTransformer;
+import org.commonreality.util.LockUtilities;
 
 public class NettySessionInfo extends
     AbstractSessionInfo<ChannelHandlerContext>
@@ -133,7 +135,12 @@ public class NettySessionInfo extends
   {
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(String.format("Writing %s", message));
-    _lastWrite = getRawSession().write(message);
+
+    if (!isClosing() && isConnected())
+      _lastWrite = getRawSession().writeAndFlush(message);
+    else if (LOGGER.isWarnEnabled())
+      LOGGER.warn(String.format("Tried to write [%s] to closing session",
+          message));
   }
 
   @Override
@@ -141,8 +148,15 @@ public class NettySessionInfo extends
   {
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(String.format("Writing %s", message));
-    _lastWrite = getRawSession().writeAndFlush(message);
-    _lastWrite.awaitUninterruptibly();
+    if (!isClosing() && isConnected())
+      _lastWrite = getRawSession().writeAndFlush(message);
+    // if (!_lastWrite.awaitUninterruptibly(500, TimeUnit.MILLISECONDS))
+    // if (LOGGER.isWarnEnabled())
+    // LOGGER.warn(String.format("Took too long to write %s to %s", message,
+    // this));
+    else if (LOGGER.isWarnEnabled())
+      LOGGER.warn(String.format("Tried to write [%s] to closing session",
+          message));
   }
 
   @Override
@@ -150,8 +164,15 @@ public class NettySessionInfo extends
   {
     if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("closing"));
     // hold onto this for waiting..
-    flush();
-    _closing = getRawSession().close();
+    boolean shouldClose = LockUtilities
+        .runLocked(_lock, () -> _closing != null);
+
+    if (shouldClose && isConnected())
+    {
+      flush();
+      ChannelFuture future = getRawSession().close();
+      LockUtilities.runLocked(_lock, () -> _closing = future);
+    }
   }
 
   @Override
@@ -230,7 +251,14 @@ public class NettySessionInfo extends
   @Override
   public void waitForPendingWrites() throws InterruptedException
   {
-    getRawSession().flush();
+    try
+    {
+      flush();
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("Failed to wait for writes.", e);
+    }
   }
 
   @Override
@@ -260,7 +288,24 @@ public class NettySessionInfo extends
   @Override
   public void flush() throws Exception
   {
-    getRawSession().flush();
+    if (!isClosing() && isConnected())
+      getRawSession().flush();
+    else if (LOGGER.isWarnEnabled())
+      LOGGER.warn(String.format("Tried to flush a closing session"));
   }
 
+  @Override
+  public String toString()
+  {
+    IIdentifier id = (IIdentifier) getAttribute("org.commonreality.reality.impl.StateAndConnectionManager.identifier");
+    Channel channel = getRawSession().channel();
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("[").append(channel.getClass().getSimpleName()).append(", ")
+        .append(channel.hashCode()).append(", id:");
+    sb.append(id).append(", l:").append(channel.localAddress()).append(", r:")
+        .append(channel.remoteAddress()).append("]");
+
+    return sb.toString();
+  }
 }

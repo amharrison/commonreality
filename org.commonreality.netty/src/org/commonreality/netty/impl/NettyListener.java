@@ -11,6 +11,7 @@ import java.net.SocketAddress;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.net.session.ISessionListener;
 import org.commonreality.netty.NettySessionInfo;
 
@@ -56,12 +57,15 @@ public class NettyListener extends ChannelHandlerAdapter
   public void channelInactive(ChannelHandlerContext ctx) throws Exception
   {
     super.channelInactive(ctx);
-    _listener.closed(NettySessionInfo.asSessionInfo(ctx));
+
+    ISessionInfo<?> session = NettySessionInfo.asSessionInfo(ctx);
+    _listener.closed(session);
   }
 
   @Override
   public void channelUnregistered(ChannelHandlerContext ctx) throws Exception
   {
+
     super.channelUnregistered(ctx);
     _listener.destroyed(NettySessionInfo.asSessionInfo(ctx));
   }

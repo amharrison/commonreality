@@ -13,9 +13,13 @@
  */
 package org.commonreality.netty.protocol;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelPipeline;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.net.protocol.IProtocolConfiguration;
+import org.commonreality.netty.impl.LoggingHandler;
 /**
  * @author developer
  *
@@ -30,7 +34,11 @@ public class NOOPProtocol implements IProtocolConfiguration
   @Override
   public void configure(Object session)
   {
+    Channel channel = (Channel) session;
 
+    ChannelPipeline pipeline = channel.pipeline();
+
+    if (LOGGER.isDebugEnabled()) pipeline.addLast(new LoggingHandler("pipe"));
   }
 
 }

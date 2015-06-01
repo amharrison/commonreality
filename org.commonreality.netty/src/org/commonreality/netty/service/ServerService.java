@@ -9,10 +9,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,21 +60,18 @@ public class ServerService extends AbstractNettyNetworkService implements
     _bootstrap = new ServerBootstrap();
     try
     {
-      _bootstrap
-          .group(_serverGroup, _workerGroup)
+      _bootstrap.group(_serverGroup, _workerGroup)
           .channel(config.getServerClass())
           .handler(new ChannelInitializer<ServerChannel>() {
 
             @Override
-            protected void initChannel(ServerChannel arg0)
-                throws Exception
+            protected void initChannel(ServerChannel arg0) throws Exception
             {
               if (LOGGER.isDebugEnabled())
                 LOGGER.debug(String.format("server socket opened"));
               _serverChannel = arg0;
             }
-          })
-          .childHandler(new ChannelInitializer<Channel>() {
+          }).childHandler(new ChannelInitializer<Channel>() {
 
             @Override
             protected void initChannel(Channel ch) throws Exception
@@ -81,15 +81,19 @@ public class ServerService extends AbstractNettyNetworkService implements
 
               protocol.configure(ch);
 
-              if (defaultListener != null)
-                ch.pipeline().addLast("defaultListener",
-                    new NettyListener(defaultListener));
-
               /*
                * add our multiplexer
                */
               ch.pipeline().addLast(_multiplexer.getClass().getName(),
                   new NettyMultiplexer(_multiplexer));
+
+              /*
+               * this is moved to later so that when the close/unregister comes
+               * we've already done all of our normal processing
+               */
+              if (defaultListener != null)
+                ch.pipeline().addLast("defaultListener",
+                    new NettyListener(defaultListener));
             }
           });
       // .option(ChannelOption.SO_BACKLOG, 128)
@@ -115,9 +119,37 @@ public class ServerService extends AbstractNettyNetworkService implements
   @Override
   public void stop(SocketAddress address) throws Exception
   {
-    _serverChannel.close().awaitUninterruptibly();
-    _serverGroup.shutdownGracefully();
-    _workerGroup.shutdownGracefully();
+    try
+    {
+      ChannelFuture future = _serverChannel.closeFuture();
+      future.addListener(new GenericFutureListener<Future<? super Void>>() {
+
+        @Override
+        public void operationComplete(Future<? super Void> arg0)
+            throws Exception
+        {
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Shutting down executors"));
+          _serverGroup.shutdownGracefully();
+          _workerGroup.shutdownGracefully();
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Shut down executors"));
+        }
+      });
+
+      if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Closing"));
+      _serverChannel.close();
+
+      if (!future.await(500, TimeUnit.MILLISECONDS))
+        throw new RuntimeException("Timed out waiting for close");
+
+      if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Closed"));
+    }
+    catch (Exception e)
+    {
+      LOGGER.error(
+          String.format("Failed to cleanly close [%s]", _serverChannel), e);
+    }
   }
 
 }

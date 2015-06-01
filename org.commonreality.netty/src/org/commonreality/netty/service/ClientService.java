@@ -7,10 +7,13 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -68,15 +71,21 @@ public class ClientService extends AbstractNettyNetworkService implements
         _activeChannel = ch;
         _connectedTo = ch.remoteAddress();
 
-        if (defaultListener != null)
-          ch.pipeline().addLast("defaultListener",
-              new NettyListener(defaultListener));
 
         /*
          * add our multiplexer
          */
         ch.pipeline().addLast(_multiplexer.getClass().getName(),
             new NettyMultiplexer(_multiplexer));
+
+        /*
+         * this is moved to later so that when the close/unregister comes we've
+         * already done all of our normal processing
+         */
+
+        if (defaultListener != null)
+          ch.pipeline().addLast("defaultListener",
+              new NettyListener(defaultListener));
       }
     });
 
@@ -96,8 +105,37 @@ public class ClientService extends AbstractNettyNetworkService implements
   @Override
   public void stop(SocketAddress address) throws Exception
   {
-    _activeChannel.close().awaitUninterruptibly();
-    _workerGroup.shutdownGracefully();
+    try
+    {
+      ChannelFuture future = _activeChannel.closeFuture();
+      future.addListener(new GenericFutureListener<Future<? super Void>>() {
+
+        @Override
+        public void operationComplete(Future<? super Void> arg0)
+            throws Exception
+        {
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Shutting down executors"));
+          _workerGroup.shutdownGracefully();
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Shut down executors"));
+        }
+      });
+
+      if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Closing"));
+      _activeChannel.close();
+
+      if (!future.await(500, TimeUnit.MILLISECONDS))
+        throw new RuntimeException("Timed out waiting for close");
+
+      if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Closed"));
+    }
+    catch (Exception e)
+    {
+      LOGGER.error(
+          String.format("Failed to cleanly close [%s]", _activeChannel), e);
+    }
+
   }
 
 }

@@ -7,7 +7,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.commonreality.netty.core;bundle-version="1.0.0",
  org.commonreality.net;bundle-version="1.0.0",
  org.commonreality.support;bundle-version="1.0.0",
- org.apache.log4j;bundle-version="1.2.15";resolution:=optional
+ org.apache.log4j;bundle-version="1.2.15";resolution:=optional,
+ org.commonreality.api;bundle-version="1.0.0"
 Eclipse-BuddyPolicy: registered
 Eclipse-RegisterBuddy: org.commonreality.net, org.commonreality.api, org.commonreality.core, org.apache.log4j 
 Export-Package: org.commonreality.netty,

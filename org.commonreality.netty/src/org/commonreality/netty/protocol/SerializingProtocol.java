@@ -51,13 +51,13 @@ public class SerializingProtocol implements IProtocolConfiguration
     // .getClassLoader())),
     // new ObjectEncoder());
     // else
-    pipeline.addLast(new LoggingHandler("wire"));
+    if (LOGGER.isDebugEnabled()) pipeline.addLast(new LoggingHandler("wire"));
 
     pipeline.addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(getClass()
         .getClassLoader())));
     pipeline.addLast(new ObjectEncoder());
 
-    pipeline.addLast(new LoggingHandler("app"));
+    if (LOGGER.isDebugEnabled()) pipeline.addLast(new LoggingHandler("app"));
   }
 
 }
