@@ -83,6 +83,7 @@ public abstract class AbstractAgent extends AbstractParticipant implements
   /**
    * @see org.commonreality.agents.IAgent#setCredentials(org.commonreality.net.message.credentials.ICredentials)
    */
+  @Override
   public void setCredentials(ICredentials credentials)
   {
     _credentials = credentials;
@@ -230,7 +231,7 @@ public abstract class AbstractAgent extends AbstractParticipant implements
   }
 
   @Override
-  public void shutdown() throws Exception
+  public void shutdown(boolean force) throws Exception
   {
     /*
      * send out the remove command for ourselves
@@ -241,7 +242,7 @@ public abstract class AbstractAgent extends AbstractParticipant implements
     else if (LOGGER.isDebugEnabled())
       LOGGER.debug(String.format("Shutdown but not connected?"));
 
-    super.shutdown();
+    super.shutdown(force);
   }
 
   @Override

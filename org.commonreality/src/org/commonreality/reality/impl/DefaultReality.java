@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,8 +95,6 @@ public class DefaultReality extends AbstractParticipant implements IReality
     CommonReality.setReality(this);
   }
 
-
-
   public StateAndConnectionManager getStateAndConnectionManager()
   {
     return _manager;
@@ -130,14 +127,12 @@ public class DefaultReality extends AbstractParticipant implements IReality
       @Override
       public void destroyed(ISessionInfo<?> session)
       {
-        // TODO Auto-generated method stub
 
       }
 
       @Override
       public void created(ISessionInfo<?> session)
       {
-        // TODO Auto-generated method stub
 
       }
 
@@ -278,6 +273,8 @@ public class DefaultReality extends AbstractParticipant implements IReality
   {
     boolean allResponded = true;
     StateAndConnectionManager manager = getStateAndConnectionManager();
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Setting participant states to [%s]", state));
     Collection<IIdentifier> unresponsiveParticipants = manager.setState(state);
     for (IIdentifier unresponsive : unresponsiveParticipants)
     {
@@ -331,11 +328,12 @@ public class DefaultReality extends AbstractParticipant implements IReality
   {
     checkState(State.INITIALIZED, State.STOPPED);
 
-    ReentrantReadWriteLock lock = getStateAndConnectionManager().getStateLock();
+    // ReentrantReadWriteLock lock =
+    // getStateAndConnectionManager().getStateLock();
 
-    try
-    {
-      lock.readLock().lock();
+    // try
+    // {
+    // lock.writeLock().lock();
 
       if (LOGGER.isDebugEnabled()) LOGGER.debug("reseting");
       /*
@@ -344,13 +342,13 @@ public class DefaultReality extends AbstractParticipant implements IReality
       // sendAndWaitForAcknowledgement(new ControlCommand(getIdentifier(),
       // IControlCommand.State.RESET, clockWillBeReset), getTimeout());
       setParticipantStates(State.INITIALIZED);
+    // }
+    // finally
+    // {
+    // lock.writeLock().unlock();
+    super.reset(clockWillBeReset);
+    // }
 
-      super.reset(clockWillBeReset);
-    }
-    finally
-    {
-      lock.readLock().unlock();
-    }
   }
 
   /**
@@ -363,25 +361,19 @@ public class DefaultReality extends AbstractParticipant implements IReality
   {
     checkState(State.INITIALIZED);
 
-    ReentrantReadWriteLock lock = getStateAndConnectionManager().getStateLock();
+    // ReentrantReadWriteLock lock =
+    // getStateAndConnectionManager().getStateLock();
 
     boolean shutdown = false;
-    try
-    {
-      lock.readLock().lock();
 
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Starting");
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("Starting");
 
-      shutdown = !setParticipantStates(State.STARTED)
-          && _disconnectAllOnMissedState;
-      if (!shutdown) super.start();
-    }
-    finally
-    {
-      lock.readLock().unlock();
-    }
+    shutdown = !setParticipantStates(State.STARTED)
+        && _disconnectAllOnMissedState;
 
-    if (shutdown)
+    if (!shutdown)
+      super.start();
+    else
     {
       if (LOGGER.isDebugEnabled())
         LOGGER.debug("Shutting down due to missed states");
@@ -397,22 +389,26 @@ public class DefaultReality extends AbstractParticipant implements IReality
   {
     checkState(State.STARTED, State.SUSPENDED);
 
-    ReentrantReadWriteLock lock = getStateAndConnectionManager().getStateLock();
+    // ReentrantReadWriteLock lock =
+    // getStateAndConnectionManager().getStateLock();
 
-    try
-    {
-      lock.readLock().lock();
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug("Stopping", new RuntimeException());
+    // try
+    // {
+    // lock.writeLock().lock();
 
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Stopping");
+    setParticipantStates(State.STOPPED);
 
-      setParticipantStates(State.STOPPED);
+    // }
+    // finally
+    // {
+    // lock.writeLock().unlock();
 
       super.stop();
-    }
-    finally
-    {
-      lock.readLock().unlock();
-    }
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("Stopped");
+    // }
+
   }
 
   /**
@@ -448,29 +444,41 @@ public class DefaultReality extends AbstractParticipant implements IReality
     Future<IAcknowledgement> rtn = null;
 
     if (session != null)
+    {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("[%s] enter synch %s", getName(), session));
       synchronized (session)
       {
+        if (message instanceof IRequest)
         {
-          if (message instanceof IRequest)
-          {
-            SessionAcknowledgements sa = SessionAcknowledgements
-                .getSessionAcks(session);
-            if (sa != null) rtn = sa.newAckFuture(message);
-          }
-        }
-        // pulled write out..
-        try
-        {
-          session.write(message);
-
-          if (shouldFlush(message)) session.flush();
-        }
-        catch (Exception e)
-        {
-          LOGGER.error(String.format("Failed to write message %s to %s ",
-              message, session), e);
+          SessionAcknowledgements sa = SessionAcknowledgements
+              .getSessionAcks(session);
+          if (sa != null) rtn = sa.newAckFuture(message);
         }
       }
+
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("[%s] exit synch %s", getName(), session));
+
+      // pulled write out..
+      try
+      {
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("[%s] Writing %s to %s", getName(),
+              message, session));
+        session.write(message);
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("[%s] Wrote %s to %s", getName(), message,
+              session));
+
+        if (shouldFlush(message)) session.flush();
+      }
+      catch (Exception e)
+      {
+        LOGGER.error(String.format("Failed to write message %s to %s ",
+            message, session), e);
+      }
+    }
     else if (LOGGER.isWarnEnabled()) LOGGER.warn("null session?");
 
     if (rtn == null && message instanceof IRequest)
@@ -488,7 +496,9 @@ public class DefaultReality extends AbstractParticipant implements IReality
     boolean flush = message instanceof ConnectionAcknowledgment
         || message instanceof ICommand
         || message instanceof NewIdentifierAcknowledgement
-        || message instanceof NotificationMessage;
+        || message instanceof NotificationMessage
+        || message instanceof TimeCommand
+        || message instanceof IAcknowledgement;
     return flush;
   }
 
@@ -499,10 +509,10 @@ public class DefaultReality extends AbstractParticipant implements IReality
     ISessionInfo session = getStateAndConnectionManager()
         .getParticipantSession(identifier);
 
+    /*
+     * the participant might not have finished the connection sequence..
+     */
     if (session == null)
-      /*
-       * the participant might not have finished the connection sequence..
-       */
       session = getStateAndConnectionManager().getPendingParticipantSession(
           identifier);
 
@@ -520,28 +530,18 @@ public class DefaultReality extends AbstractParticipant implements IReality
   @Override
   public void resume() throws Exception
   {
-    ReentrantReadWriteLock lock = getStateAndConnectionManager().getStateLock();
+    // ReentrantReadWriteLock lock =
+    // getStateAndConnectionManager().getStateLock();
 
     boolean shutdown = false;
 
-    try
-    {
-      lock.writeLock().lock();
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("Resuming");
 
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("Resuming");
+    // sendAndWaitForAcknowledgement(new ControlCommand(getIdentifier(),
+    // IControlCommand.State.RESUME), getTimeout());
 
-      // sendAndWaitForAcknowledgement(new ControlCommand(getIdentifier(),
-      // IControlCommand.State.RESUME), getTimeout());
-
-      shutdown = !setParticipantStates(State.STARTED)
-          && _disconnectAllOnMissedState;
-
-      super.resume();
-    }
-    finally
-    {
-      lock.writeLock().unlock();
-    }
+    shutdown = !setParticipantStates(State.STARTED)
+        && _disconnectAllOnMissedState;
 
     if (shutdown)
     {
@@ -549,6 +549,8 @@ public class DefaultReality extends AbstractParticipant implements IReality
         LOGGER.debug("Shutting down due to missed states");
       shutdown();
     }
+    else
+      resume();
   }
 
   /**
@@ -565,7 +567,7 @@ public class DefaultReality extends AbstractParticipant implements IReality
 
     if (LOGGER.isDebugEnabled()) LOGGER.debug("Shutting down");
 
-    setParticipantStates(State.UNKNOWN);
+    // setParticipantStates(State.UNKNOWN);
 
     cleanUp();
   }
@@ -578,25 +580,14 @@ public class DefaultReality extends AbstractParticipant implements IReality
   {
     checkState(State.STARTED);
 
-    ReentrantReadWriteLock lock = getStateAndConnectionManager().getStateLock();
+    // ReentrantReadWriteLock lock =
+    // getStateAndConnectionManager().getStateLock();
 
     boolean shutdown = false;
+    if (LOGGER.isDebugEnabled()) LOGGER.debug("suspending");
 
-    try
-    {
-      lock.readLock().lock();
-
-      if (LOGGER.isDebugEnabled()) LOGGER.debug("suspending");
-
-      shutdown = !setParticipantStates(State.SUSPENDED)
-          && _disconnectAllOnMissedState;
-
-      super.suspend();
-    }
-    finally
-    {
-      lock.readLock().unlock();
-    }
+    shutdown = !setParticipantStates(State.SUSPENDED)
+        && _disconnectAllOnMissedState;
 
     if (shutdown)
     {
@@ -604,6 +595,8 @@ public class DefaultReality extends AbstractParticipant implements IReality
         LOGGER.debug("Shutting down due to missed states");
       shutdown();
     }
+    else
+      super.suspend();
   }
 
   /**

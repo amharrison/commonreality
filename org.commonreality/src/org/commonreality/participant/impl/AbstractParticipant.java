@@ -1,15 +1,15 @@
 /*
- * Created on Feb 23, 2007 Copyright (C) 2001-6, Anthony Harrison anh23@pitt.edu
- * (jactr.org) This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of the License,
- * or (at your option) any later version. This library is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
- * the GNU Lesser General Public License for more details. You should have
- * received a copy of the GNU Lesser General Public License along with this
- * library; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place, Suite 330, Boston, MA 02111-1307 USA
+ * Created on Feb 23, 2007 Copyright (C) 2001-6, Anthony Harrison
+ * amharrison@gmail.com (jactr.org) This library is free software; you can
+ * redistribute it and/or modify it under the terms of the GNU Lesser General
+ * Public License as published by the Free Software Foundation; either version
+ * 2.1 of the License, or (at your option) any later version. This library is
+ * distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details. You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 package org.commonreality.participant.impl;
 
@@ -50,6 +50,7 @@ import org.commonreality.participant.addressing.impl.BasicAddressingInformation;
 import org.commonreality.participant.impl.ack.SessionAcknowledgements;
 import org.commonreality.participant.impl.handlers.DefaultHandlers;
 import org.commonreality.participant.impl.handlers.GeneralObjectHandler;
+import org.commonreality.reality.impl.StateAndConnectionManager;
 
 /**
  * Skeleton participant that handles the majority of tasks. A participants life
@@ -163,6 +164,20 @@ public abstract class AbstractParticipant extends ThinParticipant implements
   protected ISessionInfo<?> getSession()
   {
     return _crSession;
+  }
+
+  @Override
+  public void setIdentifier(IIdentifier identifier)
+  {
+    super.setIdentifier(identifier);
+
+    ISessionInfo<?> session = getSession();
+    if (session != null)
+    {
+      session.setAttribute(StateAndConnectionManager.IDENTIFIER, identifier);
+
+      Thread.currentThread().setName(identifier.getName() + "-io");
+    }
   }
 
   /**
@@ -298,16 +313,26 @@ public abstract class AbstractParticipant extends ThinParticipant implements
         if (session == getSession())
           try
           {
-            setSession(null);
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format(
+                  "[%s] Session closed, stopping and shuting down", getName()));
+
             if (stateMatches(State.STARTED, State.SUSPENDED)) stop();
 
+            setSession(null);
+
             if (stateMatches(State.CONNECTED, State.INITIALIZED, State.UNKNOWN,
-                State.STOPPED)) shutdown();
+                State.STOPPED)) shutdown(false);
+
           }
           catch (Exception e)
           {
             LOGGER.error("Failed to cleanly disconnect from CR", e);
           }
+        else if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format(
+              "[%s] Spurious closed from another session? %s", getName(),
+              session));
       }
     };
   }
@@ -375,7 +400,7 @@ public abstract class AbstractParticipant extends ThinParticipant implements
   {
     if (LOGGER.isDebugEnabled())
       LOGGER.debug("Stopping " + service.getClass().getSimpleName() + " on "
-          + address);
+          + address, new RuntimeException());
     service.stop(address);
   }
 
@@ -383,7 +408,9 @@ public abstract class AbstractParticipant extends ThinParticipant implements
   protected void setState(State state)
   {
     super.setState(state);
-    // and send a message
+    // and send a message, if unknown, we aren't currently connected.
+    // just to avoid the message.
+    // if (!state.equals(State.UNKNOWN))
     send(new ControlAcknowledgement(getIdentifier(), -1, state));
   }
 
@@ -488,6 +515,8 @@ public abstract class AbstractParticipant extends ThinParticipant implements
     if (session != null)
     {
       // this could be dangerous.. where else do we sync on session?
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("[%s] enter synch %s", getName(), session));
       synchronized (session)
       {
         if (message instanceof IRequest)
@@ -497,11 +526,19 @@ public abstract class AbstractParticipant extends ThinParticipant implements
           if (sa != null) rtn = sa.newAckFuture(message);
         }
       }
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("[%s] exit synch %s", getName(), session));
 
       try
       {
         // not too efficient..
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("[%s] Writing %s to %s", getName(),
+              message, session));
         session.write(message);
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("[%s] Wrote %s to %s", getName(), message,
+              session));
 
         // flush when we send a time request?
         if (shouldFlush(message)) session.flush();
@@ -513,8 +550,8 @@ public abstract class AbstractParticipant extends ThinParticipant implements
       }
     }
     else if (LOGGER.isWarnEnabled())
-      LOGGER.warn("Null session, could not send " + message,
-          new RuntimeException());
+      LOGGER.warn(String.format("[%s] Null session, could not send %s ",
+          getName(), message), new RuntimeException());
 
     if (rtn == null) rtn = EMPTY_ACK;
 
@@ -527,7 +564,7 @@ public abstract class AbstractParticipant extends ThinParticipant implements
         || message instanceof ConnectionRequest
         || message instanceof NewIdentifierRequest
         || message instanceof NotificationMessage
-        || message instanceof IRequest;
+        || message instanceof IRequest || message instanceof IAcknowledgement;
     return flush;
   }
 }

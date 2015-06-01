@@ -16,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import javolution.util.FastList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.efferent.IEfferentCommand;
@@ -47,6 +49,7 @@ import org.commonreality.reality.IReality;
 import org.commonreality.reality.impl.handler.ObjectCommandHandler;
 import org.commonreality.time.IClock;
 import org.commonreality.time.impl.OwnedClock.OwnedAuthoritativeClock;
+import org.commonreality.util.LockUtilities;
 
 /**
  * state and connection manager does just that but is centralized so that we can
@@ -67,11 +70,11 @@ public class StateAndConnectionManager
   static private final transient Log        LOGGER                  = LogFactory
                                                                         .getLog(StateAndConnectionManager.class);
 
-  static private final String               CREDENTIALS             = StateAndConnectionManager.class
+  static public final String                CREDENTIALS             = StateAndConnectionManager.class
                                                                         .getName()
                                                                         + ".credentials";
 
-  static private final String               IDENTIFIER              = StateAndConnectionManager.class
+  static public final String                IDENTIFIER              = StateAndConnectionManager.class
                                                                         .getName()
                                                                         + ".identifier";
 
@@ -156,26 +159,83 @@ public class StateAndConnectionManager
   {
     try
     {
-      _lock.writeLock().lock();
-      _isPromiscuous = promiscuous;
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+      LockUtilities.runLocked(
+          _lock.writeLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            _isPromiscuous = promiscuous;
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.setPromiscuous threw InterruptedException : ",
+              e);
     }
     finally
     {
-      _lock.writeLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    // try
+    // {
+    // _lock.writeLock().lock();
+    // }
+    // finally
+    // {
+    // _lock.writeLock().unlock();
+    // }
   }
 
   public boolean isPromiscuous()
   {
     try
     {
-      _lock.readLock().lock();
-      return _isPromiscuous;
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+
+      boolean rtn = LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            return _isPromiscuous;
+          });
+      return rtn;
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.isPromiscuous threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER.error(
+          "StateAndConnectionManager.isPromiscuous threw Exception : ", e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+    return false;
+
+    // try
+    // {
+    // _lock.readLock().lock();
+    // return _isPromiscuous;
+    // }
+    // finally
+    // {
+    // _lock.readLock().unlock();
+    // }
   }
 
   /**
@@ -187,28 +247,45 @@ public class StateAndConnectionManager
   public void grantCredentials(ICredentials credentials,
       boolean wantsClockOwnership)
   {
+
     try
     {
-      _lock.writeLock().lock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+      LockUtilities
+          .runLocked(
+              _lock.writeLock(),
+              () -> {
+                if (LOGGER.isDebugEnabled())
+                  LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+                if (!_validCredentials.contains(credentials))
+                  _validCredentials.add(credentials);
+                else if (LOGGER.isDebugEnabled())
+                  LOGGER.debug("Credentials are already recognized");
 
-      if (!_validCredentials.contains(credentials))
-        _validCredentials.add(credentials);
-      else if (LOGGER.isDebugEnabled())
-        LOGGER.debug("Credentials are already recognized");
+                if (wantsClockOwnership)
+                {
+                  if (_clockOwnerCredentials != null && LOGGER.isWarnEnabled())
+                    LOGGER
+                        .warn("Clock owner credentials have already been set, overwriting");
 
-      if (wantsClockOwnership)
-      {
-        if (_clockOwnerCredentials != null && LOGGER.isWarnEnabled())
-          LOGGER
-              .warn("Clock owner credentials have already been set, overwriting");
-
-        _clockOwnerCredentials = credentials;
-      }
+                  _clockOwnerCredentials = credentials;
+                }
+              });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.grantCredentials threw InterruptedException : ",
+              e);
     }
     finally
     {
-      _lock.writeLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
   }
 
   /**
@@ -220,18 +297,36 @@ public class StateAndConnectionManager
   public void revokeCredentials(ICredentials credentials)
   {
     boolean revoked = false;
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
     try
     {
-      _lock.writeLock().lock();
-
-      _pendingCredentials.remove(credentials);
-      revoked = _validCredentials.remove(credentials);
-
-      // TODO test for revoked creds same as clock owner
+      revoked = LockUtilities.runLocked(
+          _lock.writeLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            _pendingCredentials.remove(credentials);
+            return _validCredentials.remove(credentials);
+          });
+    }
+    catch (InterruptedException e1)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.revokeCredentials threw InterruptedException : ",
+              e1);
+    }
+    catch (Exception e1)
+    {
+      LOGGER.error(
+          "StateAndConnectionManager.revokeCredentials threw Exception : ", e1);
     }
     finally
     {
-      _lock.writeLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
 
     if (revoked)
@@ -270,29 +365,80 @@ public class StateAndConnectionManager
    */
   public boolean credentialsAreValid(ICredentials credentials)
   {
+    boolean areValid = false;
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
     try
     {
-      _lock.readLock().lock();
-      return _isPromiscuous || _validCredentials.contains(credentials);
+      areValid = LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            return _isPromiscuous || _validCredentials.contains(credentials);
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.credentialsAreValid threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.credentialsAreValid threw Exception : ",
+              e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return areValid;
   }
 
   public boolean isClockOwner(ICredentials credentials)
   {
+    boolean isOwner = false;
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
     try
     {
-      _lock.readLock().lock();
-      return _clockOwnerCredentials == null
-          || _clockOwnerCredentials.equals(credentials);
+      isOwner = LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            return _clockOwnerCredentials == null
+                || _clockOwnerCredentials.equals(credentials);
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.isClockOwner threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER.error("StateAndConnectionManager.isClockOwner threw Exception : ",
+          e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return isOwner;
   }
 
   /**
@@ -305,19 +451,37 @@ public class StateAndConnectionManager
       Collection<IIdentifier> participantContainer)
   {
     if (participantContainer == null)
-      participantContainer = new ArrayList<IIdentifier>(Math.max(1,
-          _activeParticipantSessions.size()));
+      participantContainer = new ArrayList<IIdentifier>(10);
+
+    Collection<IIdentifier> fCollection = participantContainer;
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
 
     try
     {
-      _lock.readLock().lock();
-      participantContainer.addAll(_activeParticipantSessions.keySet());
-      return participantContainer;
+      LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            fCollection.addAll(_activeParticipantSessions.keySet());
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.getActiveParticipants threw InterruptedException : ",
+              e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return fCollection;
   }
 
   /**
@@ -329,20 +493,36 @@ public class StateAndConnectionManager
   public Collection<ISessionInfo<?>> getActiveSessions(
       Collection<ISessionInfo<?>> container)
   {
-    if (container == null)
-      container = new ArrayList<ISessionInfo<?>>(Math.max(1,
-          _activeParticipantSessions.size()));
+    if (container == null) container = new ArrayList<ISessionInfo<?>>(10);
+    Collection<ISessionInfo<?>> fCollection = container;
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
 
     try
     {
-      _lock.readLock().lock();
-      container.addAll(_activeParticipantSessions.values());
-      return container;
+      LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            fCollection.addAll(_activeParticipantSessions.values());
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.getActiveSessions threw InterruptedException : ",
+              e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return fCollection;
   }
 
   /**
@@ -354,15 +534,39 @@ public class StateAndConnectionManager
    */
   public IIdentifier getActiveParticipant(ICredentials credentials)
   {
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+
     try
     {
-      _lock.readLock().lock();
-      return _activeParticipantCredentials.get(credentials);
+      return LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            return _activeParticipantCredentials.get(credentials);
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.getActiveParticipant threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER.error(
+          "StateAndConnectionManager.getActiveParticipant threw Exception : ",
+          e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return null;
   }
 
   /**
@@ -373,28 +577,76 @@ public class StateAndConnectionManager
    */
   public ISessionInfo<?> getParticipantSession(IIdentifier participantId)
   {
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+
     try
     {
-      _lock.readLock().lock();
-      return _activeParticipantSessions.get(participantId);
+      return LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            return _activeParticipantSessions.get(participantId);
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.getParticipantSession threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER.error(
+          "StateAndConnectionManager.getParticipantSession threw Exception : ",
+          e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return null;
   }
 
   public ISessionInfo<?> getPendingParticipantSession(IIdentifier participantId)
   {
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
     try
     {
-      _lock.readLock().lock();
-      return _pendingParticipantSessions.get(participantId);
+      return LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired lock [%s]", _lock));
+            return _pendingParticipantSessions.get(participantId);
+          });
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.getPendingParticipantSession threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.getPendingParticipantSession threw Exception : ",
+              e);
     }
     finally
     {
-      _lock.readLock().unlock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released lock [%s]", _lock));
     }
+
+    return null;
   }
 
   public IIdentifier getParticipantIdentifier(ISessionInfo<?> session)
@@ -424,10 +676,6 @@ public class StateAndConnectionManager
    */
   public Collection<IIdentifier> setState(IParticipant.State state)
   {
-    Collection<IIdentifier> participants = getActiveParticipants(new ArrayList<IIdentifier>());
-    Map<IIdentifier, Future<IAcknowledgement>> ackMessages = new HashMap<IIdentifier, Future<IAcknowledgement>>();
-    Collection<IIdentifier> unresponsive = new ArrayList<IIdentifier>(
-        participants.size());
 
     IControlCommand.State commandState = null;
 
@@ -448,6 +696,8 @@ public class StateAndConnectionManager
       case INITIALIZED:
         commandState = IControlCommand.State.RESET;
         break;
+      case CONNECTED:
+        break; // we don't issue this
       case UNKNOWN:
         commandState = IControlCommand.State.SHUTDOWN;
         break;
@@ -455,6 +705,11 @@ public class StateAndConnectionManager
 
     if (LOGGER.isDebugEnabled())
       LOGGER.debug("Signallying participants to " + commandState);
+
+    Collection<IIdentifier> participants = getActiveParticipants(new ArrayList<IIdentifier>());
+    Map<IIdentifier, Future<IAcknowledgement>> ackMessages = new HashMap<IIdentifier, Future<IAcknowledgement>>();
+    Collection<IIdentifier> unresponsive = new ArrayList<IIdentifier>(
+        participants.size());
 
     for (IIdentifier identifier : participants)
     {
@@ -498,7 +753,7 @@ public class StateAndConnectionManager
             IControlAcknowledgement ack = (IControlAcknowledgement) entry
                 .getValue().get(perParticipantWaitTime, TimeUnit.MILLISECONDS);
 
-            if (ack == null || !commandState.equals(ack.getState()))
+            if (ack == null || !commandState.equivalentTo(ack.getState()))
             {
               /*
                * didn't respond with the correct state..
@@ -506,9 +761,16 @@ public class StateAndConnectionManager
               unresponsive.add(entry.getKey());
 
               if (LOGGER.isWarnEnabled())
-                LOGGER.warn(entry.getKey() + "'s state reply was "
-                    + (ack != null ? ack.getState() : null) + ", expected "
-                    + commandState, ack != null ? ack.getException() : null);
+                LOGGER.warn(
+                    String.format("%s's state reply was %s, expected %s. ",
+                        entry.getKey(), ack != null ? ack.getState() : null,
+                        commandState),
+                    ack != null && ack.getException() != null ? ack
+                        .getException() : new RuntimeException());
+
+              // LOGGER.warn(entry.getKey() + "'s state reply was "
+              // + (ack != null ? ack.getState() : null) + ", expected "
+              // + commandState, ack != null ? ack.getException() : null);
             }
             else
               acknowledged.add(entry.getKey());
@@ -516,9 +778,9 @@ public class StateAndConnectionManager
           catch (TimeoutException e)
           {
             // just fine
-            // if (LOGGER.isDebugEnabled())
-            // LOGGER.debug("Timed out waiting for " + entry.getKey() + " ["
-            // + perParticipantWaitTime + "ms]");
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug("Timed out waiting for " + entry.getKey() + " ["
+                  + perParticipantWaitTime + "ms]");
           }
           catch (Exception e)
           {
@@ -594,7 +856,10 @@ public class StateAndConnectionManager
 
     try
     {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring lock"));
       _lock.writeLock().lock();
+      if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Acquired"));
 
       /*
        * reject connection immediately if the credentials are invalid
@@ -655,6 +920,7 @@ public class StateAndConnectionManager
             request.getMessageId(),
             "Simulation has already stopped, cannot accept new connections"));
         session.close();
+        return;
       }
 
       /*
@@ -715,24 +981,35 @@ public class StateAndConnectionManager
     boolean isClockOwner = false;
     Future<IAcknowledgement> initAck = null;
 
+    FastList<IIdentifier> pendingIds = FastList.newInstance();
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("Acquiring [%s]", _lock));
     try
     {
-      _lock.writeLock().lock();
+      LockUtilities.runLocked(
+          _lock.writeLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired [%s]", _lock));
+            _pendingCredentials.remove(credentials);
+            _pendingParticipantSessions.remove(identifier);
 
-      _pendingCredentials.remove(credentials);
-      _pendingParticipantSessions.remove(identifier);
-
-      if (!identifier.equals(object.getIdentifier()))
-        /*
-         * these two ids need to match as the object is supposed to represent
-         * the participant.. we need to send an appropriate message back..
-         */
-        throw new IllegalStateException("participant " + identifier
-            + " does not match object identifier " + object.getIdentifier());
+            if (!identifier.equals(object.getIdentifier()))
+              /*
+               * these two ids need to match as the object is supposed to
+               * represent the participant.. we need to send an appropriate
+               * message back..
+               */
+              throw new IllegalStateException("participant " + identifier
+                  + " does not match object identifier "
+                  + object.getIdentifier());
+          });
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released [%s]", _lock));
 
       /*
-       * tell the participant to initialize.. and we'll check that he did
-       * later..
+       * no exception, let's continue (outside of the lock)
        */
       if (LOGGER.isDebugEnabled())
         LOGGER.debug("Requesting " + identifier + " initialize");
@@ -760,112 +1037,261 @@ public class StateAndConnectionManager
        * (i.e. no new data can be added to the object handler until we return
        * from this method, as this is called from the object handler..)
        */
-      if (_pendingParticipantSessions.size() != 0)
-        for (IIdentifier pendingId : _pendingParticipantSessions.keySet())
-        {
-          Collection<IObjectDelta> data = objectHandler
-              .getPendingData(pendingId);
-          if (data.size() != 0)
-            try
-            {
-              if (LOGGER.isDebugEnabled())
-                LOGGER
-                    .debug("Received object data for "
-                        + pendingId
-                        + ", but no add command. "
-                        + identifier
-                        + " did not receive data since it was pending too. Forwarding object data");
-              session.write(new ObjectData(_reality.getIdentifier(), data));
-            }
-            catch (Exception e)
-            {
-              LOGGER.error(String.format("Failed to forward object data"), e);
-            }
-        }
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring [%s]", _lock));
+
+      LockUtilities.runLocked(
+          _lock.readLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired [%s]", _lock));
+            pendingIds.addAll(_pendingParticipantSessions.keySet());
+          });
+
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released [%s]", _lock));
+
+      /**
+       * write out any pending object data
+       */
+      for (IIdentifier pendingId : pendingIds)
+      {
+        Collection<IObjectDelta> data = objectHandler.getPendingData(pendingId);
+        if (data.size() != 0)
+          try
+          {
+            if (LOGGER.isDebugEnabled())
+              LOGGER
+                  .debug("Received object data for "
+                      + pendingId
+                      + ", but no add command. "
+                      + identifier
+                      + " did not receive data since it was pending too. Forwarding object data");
+            session.write(new ObjectData(_reality.getIdentifier(), data));
+            session.flush();
+          }
+          catch (Exception e)
+          {
+            LOGGER.error(String.format("Failed to forward object data"), e);
+          }
+      }
+
+      /*
+       * done with pending data. Now to track this session fully..
+       */
+
       try
       {
-        session.flush();
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Acquiring [%s]", _lock));
+
+        isClockOwner = LockUtilities.runLocked(
+            _lock.writeLock(),
+            () -> {
+
+              if (LOGGER.isDebugEnabled())
+                LOGGER.debug(String.format("Acquired [%s]", _lock));
+
+              /*
+               * add them to our list of accepted connections
+               */
+              _activeParticipantCredentials.put(credentials, identifier);
+              _activeParticipantSessions.put(identifier, session);
+
+              /*
+               * and lets keep track of the clock owner.. we dont add the owner
+               * until we exit the lock. Why? if the clock time is being
+               * incremented, the incrementer will own the clock's lock and then
+               * try to acquire the read lock at getActiveSessions() to send
+               * notification out. However, we currently have the state lock and
+               * if we tried to add the clock owner here, we'd try to acquire
+               * the clock lock too, resulting in deadlock.. so we add after the
+               * lock is released
+               */
+              return isClockOwner(credentials);
+            });
+        if (LOGGER.isDebugEnabled())
+          LOGGER.debug(String.format("Released [%s]", _lock));
+
+        /*
+         * finally, deal with the clock
+         */
+        if (isClockOwner)
+        {
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Adding [%s] as a clock owner",
+                identifier));
+
+          IClock clock = _reality.getClock();
+          OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+              .getAuthority().get();
+          auth.addOwner(identifier);
+        }
       }
       catch (Exception e)
       {
-        LOGGER.error("Failed to flush", e);
+        LOGGER
+            .error(
+                "StateAndConnectionManager.acceptParticipant threw Exception : ",
+                e);
       }
 
-      /*
-       * add them to our list of accepted connections
-       */
-      _activeParticipantCredentials.put(credentials, identifier);
-      _activeParticipantSessions.put(identifier, session);
-
-      /*
-       * and lets keep track of the clock owner.. we dont add the owner until we
-       * exit the lock. Why? if the clock time is being incremented, the
-       * incrementer will own the clock's lock and then try to acquire the read
-       * lock at getActiveSessions() to send notification out. However, we
-       * currently have the state lock and if we tried to add the clock owner
-       * here, we'd try to acquire the clock lock too, resulting in deadlock..
-       * so we add after the lock is released
-       */
-      isClockOwner = isClockOwner(credentials);
-
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug("Particiapnt " + identifier + " has been accepted");
+    }
+    catch (InterruptedException e2)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.acceptParticipant threw InterruptedException : ",
+              e2);
     }
     finally
     {
-      _lock.writeLock().unlock();
+
     }
 
-    if (isClockOwner)
+    // try
+    // {
+    // if (LOGGER.isDebugEnabled())
+    // LOGGER.debug(String.format("Acquiring lock"));
+    // _lock.writeLock().lock();
+    // if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Acquired"));
+    //
+    // /*
+    // * tell the participant to initialize.. and we'll check that he did
+    // * later..
+    // */
+    // if (LOGGER.isDebugEnabled())
+    // LOGGER.debug("Requesting " + identifier + " initialize");
+    //
+    // initAck = _reality.send(session,
+    // new ControlCommand(_reality.getIdentifier(),
+    // IControlCommand.State.INITIALIZE));
+    //
+    // /*
+    // * lets notify him about everyone else that is fully connected..
+    // */
+    // sendObjectInformation(_reality.getAgentObjectManager(), session,
+    // identifier);
+    // sendObjectInformation(_reality.getSensorObjectManager(), session,
+    // identifier);
+    //
+    // /*
+    // * it is still possible that another participant will be mid-way through a
+    // * connection too and will have sent its data. Since data is routed to all
+    // * active participants, this participant will not have received the data,
+    // * but will get the add command. In order to defend against this, we send
+    // * any data that has already been stored that corresponds to the
+    // * participants in the pending list.. The only reason we know this will
+    // * actually work is because the object handler is synchronized as well
+    // * (i.e. no new data can be added to the object handler until we return
+    // * from this method, as this is called from the object handler..)
+    // */
+    // if (_pendingParticipantSessions.size() != 0)
+    // for (IIdentifier pendingId : _pendingParticipantSessions.keySet())
+    // {
+    // Collection<IObjectDelta> data = objectHandler
+    // .getPendingData(pendingId);
+    // if (data.size() != 0)
+    // try
+    // {
+    // if (LOGGER.isDebugEnabled())
+    // LOGGER
+    // .debug("Received object data for "
+    // + pendingId
+    // + ", but no add command. "
+    // + identifier
+    // +
+    // " did not receive data since it was pending too. Forwarding object data");
+    // session.write(new ObjectData(_reality.getIdentifier(), data));
+    // }
+    // catch (Exception e)
+    // {
+    // LOGGER.error(String.format("Failed to forward object data"), e);
+    // }
+    // }
+    // try
+    // {
+    // session.flush();
+    // }
+    // catch (Exception e)
+    // {
+    // LOGGER.error("Failed to flush", e);
+    // }
+    //
+    // /*
+    // * add them to our list of accepted connections
+    // */
+    // _activeParticipantCredentials.put(credentials, identifier);
+    // _activeParticipantSessions.put(identifier, session);
+    //
+    // /*
+    // * and lets keep track of the clock owner.. we dont add the owner until we
+    // * exit the lock. Why? if the clock time is being incremented, the
+    // * incrementer will own the clock's lock and then try to acquire the read
+    // * lock at getActiveSessions() to send notification out. However, we
+    // * currently have the state lock and if we tried to add the clock owner
+    // * here, we'd try to acquire the clock lock too, resulting in deadlock..
+    // * so we add after the lock is released
+    // */
+    // isClockOwner = isClockOwner(credentials);
+    //
+    // if (LOGGER.isDebugEnabled())
+    // LOGGER.debug("Particiapnt " + identifier + " has been accepted");
+    // }
+    // finally
+    // {
+    // _lock.writeLock().unlock();
+    // }
+    //
+    // if (isClockOwner)
+    // {
+    // IClock clock = _reality.getClock();
+    // OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+    // .getAuthority().get();
+    // auth.addOwner(identifier);
+    // }
+
+    if (initAck != null)
     {
-      IClock clock = _reality.getClock();
-      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
-          .getAuthority().get();
-      auth.addOwner(identifier);
-    }
+      final Future<IAcknowledgement> finalInitAck = initAck;
 
-    final Future<IAcknowledgement> finalInitAck = initAck;
-
-    /**
-     * alright, now we post this runnable to the central thread. it's job is to
-     * make sure the participant has initialized and to also set its state to be
-     * consistent with the system. We do not do this on the current io thread as
-     * that would block the processing of acknowledgments. <br>
-     * <br>
-     * Notice, that we are also acquiring the read lock to make sure that no new
-     * connections or state changes occur.
-     */
-    Runnable setAndWait = new Runnable() {
-      public void run()
-      {
-        boolean disconnect = false;
-        try
+      /**
+       * alright, now we post this runnable to the central thread. it's job is
+       * to make sure the participant has initialized and to also set its state
+       * to be consistent with the system. We do not do this on the current io
+       * thread as that would block the processing of acknowledgments. <br>
+       * <br>
+       * Notice, that we are also acquiring the read lock to make sure that no
+       * new connections or state changes occur.
+       */
+      Runnable setAndWait = new Runnable() {
+        public void run()
         {
+          boolean disconnect = false;
 
-          _lock.readLock().lock();
-          waitForInitializationAck(finalInitAck, identifier);
-          startClientIfNecessary(identifier, session);
-          suspendClientIfNecessary(identifier, session);
+          if (LOGGER.isDebugEnabled())
+            LOGGER.debug(String.format("Acquiring [%s]", _lock));
+          try
+          {
+            LockUtilities.runLocked(
+                _lock.readLock(),
+                () -> {
+                  if (LOGGER.isDebugEnabled())
+                    LOGGER.debug(String.format("Acquired [%s]", _lock));
+                  waitForInitializationAck(finalInitAck, identifier);
+                  startClientIfNecessary(identifier, session);
+                  suspendClientIfNecessary(identifier, session);
+                });
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Released [%s]", _lock));
+          }
+          catch (InterruptedException e1)
+          {
+            disconnect = true;
+            LOGGER.error(".run threw InterruptedException : ", e1);
+          }
 
-        }
-        // catch (TimeoutException e)
-        // {
-        // if (LOGGER.isErrorEnabled())
-        // LOGGER.error("Waited too long for control acknowledgement from "
-        // + identifier, e);
-        // disconnect = true;
-        // }
-        catch (Exception e)
-        {
-          if (LOGGER.isErrorEnabled())
-            LOGGER.error("Control state acknowledgement from " + identifier
-                + " failed ", e);
-          disconnect = true;
-        }
-        finally
-        {
-          _lock.readLock().unlock();
-          if (disconnect) try
+          if (disconnect && session.isConnected() && !session.isClosing()) try
           {
             session.close();
           }
@@ -874,10 +1300,10 @@ public class StateAndConnectionManager
             LOGGER.error("Failed to close connection ", e);
           }
         }
-      }
-    };
+      };
 
-    _centralExecutor.execute(setAndWait);
+      _centralExecutor.execute(setAndWait);
+    }
 
     return true;
   }
@@ -1015,40 +1441,84 @@ public class StateAndConnectionManager
     IIdentifier identifier = getParticipantIdentifier(session);
     ICredentials credentials = getParticipantCredentials(session);
 
-    boolean clockWasOwner = false;
+    boolean clockCouldBeOwner = false;
 
     try
     {
-      _lock.writeLock().lock();
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+      clockCouldBeOwner = LockUtilities.runLocked(
+          _lock.writeLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired [%s]", _lock));
+            boolean couldBeOwner = false;
+            try
+            {
+              _activeParticipantCredentials.remove(credentials);
+              _activeParticipantSessions.remove(identifier);
+              couldBeOwner = isClockOwner(credentials);
+            }
+            catch (Exception e)
+            {
+              LOGGER.error("Failed to check clock ownership", e);
+            }
+            return couldBeOwner;
+          });
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released [%s]", _lock));
 
-      _activeParticipantCredentials.remove(credentials);
-      _activeParticipantSessions.remove(identifier);
-
-      clockWasOwner = isClockOwner(credentials);
     }
-    finally
+    catch (InterruptedException e)
     {
-      _lock.writeLock().unlock();
+      LOGGER
+          .error(
+              "StateAndConnectionManager.participantStopped threw InterruptedException : ",
+              e);
+    }
+    catch (Exception e)
+    {
+      LOGGER.error(
+          "StateAndConnectionManager.participantStopped threw Exception : ", e);
     }
 
-    /*
-     * Now we need to zip through all the objects that are owned by this
-     * participant (ugh)
+    /**
+     * now update the clock as necessary
      */
-    clearObjectInformation(identifier);
-
-    if (clockWasOwner)
+    if (clockCouldBeOwner)
     {
-      IClock clock = _reality.getClock();
-      OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
-          .getAuthority().get();
-      auth.removeOwner(identifier);
+      Runnable clockUpdate = () -> {
+        IClock clock = _reality.getClock();
+        OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
+            .getAuthority().get();
+        // was the owner actually removed?
+        boolean clockHasOwner = auth.hasOwner(identifier);
+        if (clockHasOwner)
+        {
+          clockHasOwner = auth.removeOwner(identifier);
 
-      if (!_reality.stateMatches(IParticipant.State.STOPPED)
-          && LOGGER.isWarnEnabled())
-        LOGGER
-            .warn(identifier
-                + " is the clock owner. It's disconnect might adversely affect other participants if they are expected to continue running");
+          if (clockHasOwner && LOGGER.isDebugEnabled())
+          {
+            Collection<Object> owners = new ArrayList<Object>();
+            auth.getOwners(owners);
+
+            LOGGER.debug(String.format("Remaining owners : %s", owners));
+          }
+
+          if (clockHasOwner
+              && !_reality.stateMatches(IParticipant.State.STOPPED)
+              && LOGGER.isWarnEnabled())
+            LOGGER
+                .warn(identifier
+                    + " was a clock owner. It's disconnect might adversely affect other participants if they are expected to continue running");
+        }
+      };
+      /*
+       * should this be moved off of the current thread?
+       */
+      clockUpdate.run();
+
+      // AbstractParticipant.getPeriodicExecutor().execute(clockUpdate);
     }
   }
 
@@ -1058,10 +1528,41 @@ public class StateAndConnectionManager
   public IIdentifier participantDisconnected(ISessionInfo<?> session)
   {
     IIdentifier identifier = getParticipantIdentifier(session);
+    ICredentials credentials = getParticipantCredentials(session);
 
     if (LOGGER.isDebugEnabled())
       LOGGER.debug("Disconnecting and cleaning up after " + identifier);
     participantStopped(session);
+
+    try
+    {
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Acquiring lock [%s]", _lock));
+      LockUtilities.runLocked(
+          _lock.writeLock(),
+          () -> {
+            if (LOGGER.isDebugEnabled())
+              LOGGER.debug(String.format("Acquired [%s]", _lock));
+            _activeParticipantCredentials.remove(credentials);
+            _activeParticipantSessions.remove(identifier);
+          });
+      if (LOGGER.isDebugEnabled())
+        LOGGER.debug(String.format("Released [%s]", _lock));
+    }
+    catch (InterruptedException e)
+    {
+      LOGGER
+          .error(
+              "StateAndConnectionManager.participantDisconnected threw InterruptedException : ",
+              e);
+    }
+
+    /*
+     * Now we need to zip through all the objects that are owned by this
+     * participant (ugh)
+     */
+
+    clearObjectInformation(identifier);
 
     return identifier;
   }
@@ -1242,9 +1743,23 @@ public class StateAndConnectionManager
   private class TrackedReadWriteLock extends ReentrantReadWriteLock
   {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 6579102079204945566L;
+
     public Collection<Thread> getWaitingThreads()
     {
       return getQueuedThreads();
+    }
+
+    @Override
+    public String toString()
+    {
+      StringBuilder sb = new StringBuilder(super.toString());
+      sb.append(" owned by:").append(getOwner()).append(" blocking:")
+          .append(getWaitingThreads());
+      return sb.toString();
     }
   }
 }
