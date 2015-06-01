@@ -30,6 +30,7 @@ import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.message.IAcknowledgement;
 import org.commonreality.net.message.IMessage;
+import org.commonreality.net.message.command.control.ControlAcknowledgement;
 import org.commonreality.net.message.notification.NotificationMessage;
 import org.commonreality.net.message.request.IRequest;
 import org.commonreality.net.message.request.connect.ConnectionRequest;
@@ -71,12 +72,10 @@ public abstract class AbstractParticipant extends ThinParticipant implements
   /**
    * logger definition
    */
-  static final Log                          LOGGER = LogFactory
-                                                               .getLog(AbstractParticipant.class);
+  static final Log                        LOGGER = LogFactory
+                                                     .getLog(AbstractParticipant.class);
 
-  static private ScheduledExecutorService           _periodicExecutor;
-
- 
+  static private ScheduledExecutorService _periodicExecutor;
 
   /**
    * return a shared periodic executor that can be useful in many circumstances
@@ -98,10 +97,10 @@ public abstract class AbstractParticipant extends ThinParticipant implements
 
   private IIdentifier                         _commonRealityIdentifier;
 
-  private volatile ISessionInfo<?>            _crSession;                        // if
-                                                                                  // connected
-                                                                                  // to
-                                                                                  // CR.
+  private volatile ISessionInfo<?>            _crSession;              // if
+                                                                        // connected
+                                                                        // to
+                                                                        // CR.
 
   private Map<INetworkService, SocketAddress> _services;
 
@@ -115,7 +114,7 @@ public abstract class AbstractParticipant extends ThinParticipant implements
   {
     super(type);
     _services = new HashMap<INetworkService, SocketAddress>();
-   
+
     _generalObjectHandler = new GeneralObjectHandler(this);
   }
 
@@ -380,7 +379,13 @@ public abstract class AbstractParticipant extends ThinParticipant implements
     service.stop(address);
   }
 
-
+  @Override
+  protected void setState(State state)
+  {
+    super.setState(state);
+    // and send a message
+    send(new ControlAcknowledgement(getIdentifier(), -1, state));
+  }
 
   /**
    * @bug this starts all services in a random order. it should be server first

@@ -190,7 +190,9 @@ public class ControlHandler implements IMessageHandler<ControlCommand>
             + command.getMessageId());
 
       t.write(new ControlAcknowledgement(_participant.getIdentifier(),
-          command.getMessageId(), state));
+ command
+          .getMessageId(), _participant.getState()));
+
       t.flush();
       /*
        * we have to acknowledge shutdown before we actually do it.

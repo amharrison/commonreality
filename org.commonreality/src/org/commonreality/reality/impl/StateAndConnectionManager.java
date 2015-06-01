@@ -605,8 +605,8 @@ public class StateAndConnectionManager
           LOGGER.debug(String.format("Credential are invalid. Rejecting %s",
               session));
 
-        session.write(new ConnectionAcknowledgment(_reality
-            .getIdentifier(), request.getMessageId(), "Invalid credentials"));
+        session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
+            request.getMessageId(), "Invalid credentials"));
         session.close();
         return;
       }
@@ -621,9 +621,8 @@ public class StateAndConnectionManager
           LOGGER.debug(String.format(
               "Credentials are already in use. Rejecing %s", session));
 
-        session.write(new ConnectionAcknowledgment(_reality
-            .getIdentifier(), request.getMessageId(),
-            "Credentials already in use"));
+        session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
+            request.getMessageId(), "Credentials already in use"));
         session.close();
         return;
       }
@@ -637,9 +636,8 @@ public class StateAndConnectionManager
         if (LOGGER.isDebugEnabled())
           LOGGER.debug(String.format("Spoofing?. Rejecing %s", session));
 
-        session.write(new ConnectionAcknowledgment(_reality
-            .getIdentifier(), request.getMessageId(),
-            "Addressing spoof detected"));
+        session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
+            request.getMessageId(), "Addressing spoof detected"));
         session.close();
         return;
       }
@@ -653,8 +651,8 @@ public class StateAndConnectionManager
           LOGGER.debug(String.format("Simulation already stopped. Rejecing %s",
               session));
 
-        session.write(new ConnectionAcknowledgment(_reality
-            .getIdentifier(), request.getMessageId(),
+        session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
+            request.getMessageId(),
             "Simulation has already stopped, cannot accept new connections"));
         session.close();
       }
@@ -682,8 +680,7 @@ public class StateAndConnectionManager
       /*
        * and acknowledge
        */
-      session.write(new ConnectionAcknowledgment(_reality
-          .getIdentifier(),
+      session.write(new ConnectionAcknowledgment(_reality.getIdentifier(),
           request.getMessageId(), "Granted", identifier));
       session.flush();
     }
@@ -899,7 +896,7 @@ public class StateAndConnectionManager
       IControlAcknowledgement controlAck = (IControlAcknowledgement) initializeResponse
           .get(getAcknowledgementTimeout(), TimeUnit.MILLISECONDS);
 
-      if (controlAck.getState() != IControlCommand.State.INITIALIZE)
+      if (controlAck.getState() != IParticipant.State.INITIALIZED)
         throw new IllegalStateException("participant " + client
             + " did not initialize : " + controlAck.getState()
             + ", disconnecting");
@@ -931,13 +928,13 @@ public class StateAndConnectionManager
         if (LOGGER.isDebugEnabled())
           LOGGER.debug("Requesting " + client + " start");
 
-        IControlCommand.State state = ((IControlAcknowledgement) _reality.send(
+        IParticipant.State state = ((IControlAcknowledgement) _reality.send(
             session,
             new ControlCommand(_reality.getIdentifier(),
                 IControlCommand.State.START)).get(getAcknowledgementTimeout(),
             TimeUnit.MILLISECONDS)).getState();
 
-        if (state != IControlCommand.State.START)
+        if (state != IParticipant.State.STARTED)
           throw new IllegalStateException("participant " + client
               + " did not start : " + state + ", disconnecting");
 
@@ -963,13 +960,13 @@ public class StateAndConnectionManager
         if (LOGGER.isDebugEnabled())
           LOGGER.debug("Requesting " + client + " suspend");
 
-        IControlCommand.State state = ((IControlAcknowledgement) _reality.send(
+        IParticipant.State state = ((IControlAcknowledgement) _reality.send(
             session,
             new ControlCommand(_reality.getIdentifier(),
                 IControlCommand.State.SUSPEND)).get(
             getAcknowledgementTimeout(), TimeUnit.MILLISECONDS)).getState();
 
-        if (state != IControlCommand.State.SUSPEND)
+        if (state != IParticipant.State.SUSPENDED)
           throw new IllegalStateException("participant " + client
               + " not suspend : " + state + ", disconnecting");
 
@@ -984,30 +981,45 @@ public class StateAndConnectionManager
     }
   }
 
+  public void participantState(ISessionInfo<?> session, IParticipant.State state)
+  {
+    IIdentifier identifier = getParticipantIdentifier(session);
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("%s  : %s", identifier, state));
+
+    switch (state)
+    {
+      case UNKNOWN:
+        break;
+      case CONNECTED:
+        break;
+      case INITIALIZED:
+        break;
+      case STARTED:
+        break;
+      case SUSPENDED:
+        break;
+      case STOPPED:
+        participantStopped(session);
+        break;
+    }
+  }
+
   /**
-   * called when a participant leaves the simulation, cleanly or not
+   * called when the participant stops so we can remove them from the clock
+   * 
+   * @param session
    */
-  public IIdentifier participantDisconnected(ISessionInfo<?> session)
+  public void participantStopped(ISessionInfo<?> session)
   {
     IIdentifier identifier = getParticipantIdentifier(session);
     ICredentials credentials = getParticipantCredentials(session);
-
-    // they never made it past the initial connection
-    if (identifier == null || credentials == null) return null;
-
-    if (LOGGER.isDebugEnabled())
-      LOGGER.debug("Disconnecting and cleaning up after " + identifier);
 
     boolean clockWasOwner = false;
 
     try
     {
       _lock.writeLock().lock();
-
-      session.setAttribute(CREDENTIALS, null);
-      session.setAttribute(IDENTIFIER, null);
-
-      _pendingCredentials.remove(credentials);
 
       _activeParticipantCredentials.remove(credentials);
       _activeParticipantSessions.remove(identifier);
@@ -1031,14 +1043,25 @@ public class StateAndConnectionManager
       OwnedAuthoritativeClock auth = (OwnedAuthoritativeClock) clock
           .getAuthority().get();
       auth.removeOwner(identifier);
-    }
 
-    if (credentials.equals(_clockOwnerCredentials))
       if (!_reality.stateMatches(IParticipant.State.STOPPED)
           && LOGGER.isWarnEnabled())
         LOGGER
             .warn(identifier
                 + " is the clock owner. It's disconnect might adversely affect other participants if they are expected to continue running");
+    }
+  }
+
+  /**
+   * called when a participant leaves the simulation, cleanly or not
+   */
+  public IIdentifier participantDisconnected(ISessionInfo<?> session)
+  {
+    IIdentifier identifier = getParticipantIdentifier(session);
+
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug("Disconnecting and cleaning up after " + identifier);
+    participantStopped(session);
 
     return identifier;
   }

@@ -10,6 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.net.handler.IMessageHandler;
+import org.commonreality.net.message.command.control.ControlAcknowledgement;
 import org.commonreality.net.message.notification.NotificationMessage;
 import org.commonreality.net.message.request.connect.ConnectionRequest;
 import org.commonreality.net.message.request.object.NewIdentifierRequest;
@@ -51,6 +52,9 @@ public class DefaultHandlers
 
     // time
     handlers.put(RequestTime.class, new TimeHandler(reality));
+
+    handlers.put(ControlAcknowledgement.class,
+        new ConnectionAckHandler(manager));
 
     // object management
     GeneralObjectHandler goh = reality.getGeneralObjectHandler();
