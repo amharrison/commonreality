@@ -17,6 +17,7 @@ import java.io.Serializable;
 
 import org.commonreality.net.message.command.ICommand;
 import org.commonreality.net.message.request.IRequest;
+import org.commonreality.participant.IParticipant;
 
 /**
  * request that sensors and agents change their run state
@@ -29,7 +30,26 @@ public interface IControlCommand extends ICommand, IRequest, Serializable
    * @author developer
    */
   static public enum State {
-    INITIALIZE, START, STOP, SUSPEND, RESUME, RESET, SHUTDOWN, UNKNOWN, CONFIGURE
+    INITIALIZE(IParticipant.State.INITIALIZED), START(
+        IParticipant.State.STARTED), STOP(IParticipant.State.STOPPED), SUSPEND(
+        IParticipant.State.SUSPENDED), RESUME(IParticipant.State.STARTED), RESET, SHUTDOWN(
+        IParticipant.State.UNKNOWN), UNKNOWN(IParticipant.State.UNKNOWN), CONFIGURE;
+
+    private IParticipant.State _equivalentTo;
+
+    private State()
+    {
+    }
+
+    private State(IParticipant.State equivalent)
+    {
+      _equivalentTo = equivalent;
+    }
+
+    public boolean equivalentTo(IParticipant.State state)
+    {
+      return state.equals(_equivalentTo);
+    }
   };
 
   /**

@@ -79,4 +79,12 @@ public class ControlAcknowledgement extends BaseAcknowledgementMessage
     return _state;
   }
 
+  @Override
+  public String toString()
+  {
+    StringBuilder sb = new StringBuilder(super.toString());
+    sb.append(":").append(getState());
+    return sb.toString();
+  }
+
 }
