@@ -1,0 +1,277 @@
+
+WARN  19:19:41,124(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:19:41,295(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Server listening on /127.0.0.1:59280
+DEBUG 19:19:41,308(NioProcessor-13) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.mina.MINASessionInfo@393015ed
+DEBUG 19:19:41,308(NioProcessor-3) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.mina.MINASessionInfo@200370d8
+DEBUG 19:19:41,313(client-1) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.mina.MINASessionInfo@393015ed
+DEBUG 19:19:41,313(server-1) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.mina.MINASessionInfo@200370d8
+DEBUG 19:19:41,325(server-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client
+DEBUG 19:19:41,325(client-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from server
+DEBUG 19:19:41,325(server-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client2
+WARN  19:20:30,230(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:20:30,286(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:20:30,359(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+WARN  19:21:01,744(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:21:01,805(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:21:01,887(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:21:01,893(main) [org.commonreality.netty.service.ServerService.start] Binding
+DEBUG 19:21:01,980(server-1) [org.commonreality.netty.service.ServerService.initChannel] server socket opened
+DEBUG 19:21:01,987(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Server listening on /127.0.0.1:59309
+DEBUG 19:21:01,987(main) [org.commonreality.netty.service.ClientService.start] Connecting
+DEBUG 19:21:01,997(client-1) [org.commonreality.netty.service.ClientService.initChannel] New connection
+DEBUG 19:21:01,999(client-1) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:02,020(client-1) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:02,025(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:02,026(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:02,030(client-1) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.netty.NettySessionInfo@6f332c9d
+DEBUG 19:21:02,031(client-1) [org.commonreality.netty.impl.NettyListener.connect] Channel connect
+DEBUG 19:21:02,031(client-1) [org.commonreality.netty.impl.NettyListener.connect] Channel connect
+DEBUG 19:21:02,031(client-1) [org.commonreality.netty.impl.LoggingHandler.connect] Channel connect
+DEBUG 19:21:02,032(client-1) [org.commonreality.netty.impl.LoggingHandler.connect] Channel connect
+DEBUG 19:21:02,038(server-2) [org.commonreality.netty.service.ServerService.initChannel] New connection received
+DEBUG 19:21:02,039(server-2) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:02,040(client-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:02,040(client-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:02,041(client-2) [org.commonreality.netty.NettySessionInfo.opened] Connection opened
+DEBUG 19:21:02,041(client-2) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.netty.NettySessionInfo@6f332c9d
+DEBUG 19:21:02,042(client-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from client
+DEBUG 19:21:02,042(server-2) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:02,042(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client
+DEBUG 19:21:02,043(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client
+DEBUG 19:21:02,043(client-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from client
+DEBUG 19:21:02,044(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:02,044(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:02,045(server-2) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.netty.NettySessionInfo@738bf155
+DEBUG 19:21:02,045(server-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:02,045(server-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:02,045(server-2) [org.commonreality.netty.NettySessionInfo.opened] Connection opened
+DEBUG 19:21:02,046(server-2) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.netty.NettySessionInfo@738bf155
+DEBUG 19:21:02,046(server-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from server
+DEBUG 19:21:02,047(server-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from server
+DEBUG 19:21:02,048(server-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from server
+DEBUG 19:21:02,049(server-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from server
+DEBUG 19:21:02,087(server-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write SimpleLeakAwareByteBuf(PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 256))
+DEBUG 19:21:02,087(client-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 256)
+DEBUG 19:21:02,088(server-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:02,088(client-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from client2
+DEBUG 19:21:02,089(server-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:02,089(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client2
+DEBUG 19:21:02,090(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client2
+DEBUG 19:21:02,090(client-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from client2
+DEBUG 19:21:02,090(client-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write PooledUnsafeDirectByteBuf(ridx: 0, widx: 25, cap: 256)
+DEBUG 19:21:02,091(client-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:02,091(client-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:02,091(server-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:02,092(server-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:21:02,092(client-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:02,092(client-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:21:02,110(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRead] wire Channel read PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 1024)
+DEBUG 19:21:02,110(server-3) [org.commonreality.netty.impl.LoggingHandler.channelRead] wire Channel read PooledUnsafeDirectByteBuf(ridx: 0, widx: 49, cap: 1024)
+DEBUG 19:21:02,114(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from server
+DEBUG 19:21:02,114(server-3) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from client
+DEBUG 19:21:02,114(client-1) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from server
+DEBUG 19:21:02,115(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client
+DEBUG 19:21:02,115(client-1) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from server
+DEBUG 19:21:02,115(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client
+DEBUG 19:21:02,115(client-1) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from server
+DEBUG 19:21:02,116(server-3) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from client
+DEBUG 19:21:02,116(client-1) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from server routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/428746855@1d5ca301
+DEBUG 19:21:02,116(server-3) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from client routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/428746855@1d5ca301
+DEBUG 19:21:02,117(client-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from server
+DEBUG 19:21:02,117(server-3) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client
+DEBUG 19:21:02,118(client-1) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] wire read complete
+DEBUG 19:21:02,118(server-3) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from client2
+DEBUG 19:21:02,118(client-1) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
+DEBUG 19:21:02,118(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client2
+DEBUG 19:21:02,119(client-1) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:02,119(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client2
+DEBUG 19:21:02,119(client-1) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:21:02,119(server-3) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from client2
+DEBUG 19:21:02,120(server-3) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from client2 routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/428746855@1d5ca301
+DEBUG 19:21:02,120(server-3) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client2
+DEBUG 19:21:02,121(server-3) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] wire read complete
+DEBUG 19:21:02,121(server-3) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
+DEBUG 19:21:02,121(server-3) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:02,122(server-3) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+WARN  19:21:15,969(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:21:16,113(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Server listening on /127.0.0.1:59320
+DEBUG 19:21:16,123(NioProcessor-3) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.mina.MINASessionInfo@18477d51
+DEBUG 19:21:16,123(NioProcessor-13) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.mina.MINASessionInfo@200370d8
+DEBUG 19:21:16,128(server-1) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.mina.MINASessionInfo@18477d51
+DEBUG 19:21:16,128(client-1) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.mina.MINASessionInfo@200370d8
+DEBUG 19:21:16,140(client-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from server
+DEBUG 19:21:16,140(server-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client
+DEBUG 19:21:16,141(server-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client2
+WARN  19:21:17,127(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:21:17,135(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:21:17,191(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:21:17,197(main) [org.commonreality.netty.service.ServerService.start] Binding
+DEBUG 19:21:17,264(server-1) [org.commonreality.netty.service.ServerService.initChannel] server socket opened
+DEBUG 19:21:17,269(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Server listening on /127.0.0.1:59322
+DEBUG 19:21:17,269(main) [org.commonreality.netty.service.ClientService.start] Connecting
+DEBUG 19:21:17,276(client-1) [org.commonreality.netty.service.ClientService.initChannel] New connection
+DEBUG 19:21:17,277(client-1) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:17,292(client-1) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:17,295(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:17,295(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:17,298(client-1) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.netty.NettySessionInfo@3f64d82c
+DEBUG 19:21:17,299(client-1) [org.commonreality.netty.impl.NettyListener.connect] Channel connect
+DEBUG 19:21:17,299(client-1) [org.commonreality.netty.impl.NettyListener.connect] Channel connect
+DEBUG 19:21:17,299(client-1) [org.commonreality.netty.impl.LoggingHandler.connect] Channel connect
+DEBUG 19:21:17,299(client-1) [org.commonreality.netty.impl.LoggingHandler.connect] Channel connect
+DEBUG 19:21:17,302(server-2) [org.commonreality.netty.service.ServerService.initChannel] New connection received
+DEBUG 19:21:17,303(server-2) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:17,303(client-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:17,303(client-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:17,304(client-2) [org.commonreality.netty.NettySessionInfo.opened] Connection opened
+DEBUG 19:21:17,304(client-2) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.netty.NettySessionInfo@3f64d82c
+DEBUG 19:21:17,304(client-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from client
+DEBUG 19:21:17,305(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client
+DEBUG 19:21:17,305(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client
+DEBUG 19:21:17,305(server-2) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:21:17,305(client-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from client
+DEBUG 19:21:17,307(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:17,307(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:21:17,307(server-2) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.netty.NettySessionInfo@665b7ef5
+DEBUG 19:21:17,307(server-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:17,308(server-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:21:17,308(server-2) [org.commonreality.netty.NettySessionInfo.opened] Connection opened
+DEBUG 19:21:17,308(server-2) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.netty.NettySessionInfo@665b7ef5
+DEBUG 19:21:17,308(server-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from server
+DEBUG 19:21:17,308(server-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from server
+DEBUG 19:21:17,309(server-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from server
+DEBUG 19:21:17,312(server-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from server
+DEBUG 19:21:17,337(client-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 256)
+DEBUG 19:21:17,337(server-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write SimpleLeakAwareByteBuf(PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 256))
+DEBUG 19:21:17,338(client-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from client2
+DEBUG 19:21:17,338(server-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:17,339(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client2
+DEBUG 19:21:17,339(server-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:17,339(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client2
+DEBUG 19:21:17,340(client-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from client2
+DEBUG 19:21:17,340(server-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:17,340(client-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write PooledUnsafeDirectByteBuf(ridx: 0, widx: 25, cap: 256)
+DEBUG 19:21:17,340(server-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:21:17,341(client-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:17,341(client-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:21:17,342(client-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:17,343(client-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:21:17,347(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRead] wire Channel read PooledUnsafeDirectByteBuf(ridx: 0, widx: 49, cap: 1024)
+DEBUG 19:21:17,357(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRead] wire Channel read PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 1024)
+DEBUG 19:21:17,358(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from server
+DEBUG 19:21:17,358(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from client
+DEBUG 19:21:17,359(client-1) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from server
+DEBUG 19:21:17,359(server-2) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client
+DEBUG 19:21:17,359(client-1) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from server
+DEBUG 19:21:17,359(server-2) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client
+DEBUG 19:21:17,360(client-1) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from server
+DEBUG 19:21:17,360(server-2) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from client
+DEBUG 19:21:17,360(client-1) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from server routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/1500056228@61f1c9e2
+DEBUG 19:21:17,360(server-2) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from client routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/1500056228@61f1c9e2
+DEBUG 19:21:17,361(client-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from server
+DEBUG 19:21:17,361(server-2) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client
+DEBUG 19:21:17,361(client-1) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] wire read complete
+DEBUG 19:21:17,361(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from client2
+DEBUG 19:21:17,362(client-1) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
+DEBUG 19:21:17,362(server-2) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client2
+DEBUG 19:21:17,362(client-1) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:17,362(server-2) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client2
+DEBUG 19:21:17,362(client-1) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:21:17,362(server-2) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from client2
+DEBUG 19:21:17,363(server-2) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from client2 routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/1500056228@61f1c9e2
+DEBUG 19:21:17,363(server-2) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client2
+DEBUG 19:21:17,363(server-2) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] wire read complete
+DEBUG 19:21:17,363(server-2) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
+DEBUG 19:21:17,364(server-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:21:17,364(server-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+WARN  19:32:45,475(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:32:45,704(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Server listening on /127.0.0.1:59411
+DEBUG 19:32:45,716(NioProcessor-3) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.mina.MINASessionInfo@5b7c0f59
+DEBUG 19:32:45,716(NioProcessor-13) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.mina.MINASessionInfo@6b664c7e
+DEBUG 19:32:45,728(server-1) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.mina.MINASessionInfo@5b7c0f59
+DEBUG 19:32:45,728(client-1) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.mina.MINASessionInfo@6b664c7e
+DEBUG 19:32:45,746(server-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client
+DEBUG 19:32:45,746(client-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from server
+DEBUG 19:32:45,747(server-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client2
+WARN  19:32:46,724(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Not strictly a proper test. This will not fail short of an exception
+DEBUG 19:32:46,742(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:32:46,849(main) [org.commonreality.netty.service.AbstractNettyNetworkService.createMultiplexer] Adding handler for java.lang.String
+DEBUG 19:32:46,862(main) [org.commonreality.netty.service.ServerService.start] Binding
+DEBUG 19:32:46,986(server-1) [org.commonreality.netty.service.ServerService.initChannel] server socket opened
+DEBUG 19:32:46,995(main) [org.commonreality.net.SimpleNetProviderTest.testNIOSerializer] Server listening on /127.0.0.1:59413
+DEBUG 19:32:46,995(main) [org.commonreality.netty.service.ClientService.start] Connecting
+DEBUG 19:32:47,005(client-1) [org.commonreality.netty.service.ClientService.initChannel] New connection
+DEBUG 19:32:47,007(client-1) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:32:47,034(client-1) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:32:47,039(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:32:47,040(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:32:47,045(client-1) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.netty.NettySessionInfo@47b7ec8d
+DEBUG 19:32:47,046(client-1) [org.commonreality.netty.impl.NettyListener.connect] Channel connect
+DEBUG 19:32:47,046(client-1) [org.commonreality.netty.impl.NettyListener.connect] Channel connect
+DEBUG 19:32:47,046(client-1) [org.commonreality.netty.impl.LoggingHandler.connect] Channel connect
+DEBUG 19:32:47,047(client-1) [org.commonreality.netty.impl.LoggingHandler.connect] Channel connect
+DEBUG 19:32:47,052(server-2) [org.commonreality.netty.service.ServerService.initChannel] New connection received
+DEBUG 19:32:47,053(server-2) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:32:47,055(client-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:32:47,056(client-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:32:47,056(client-2) [org.commonreality.netty.NettySessionInfo.opened] Connection opened
+DEBUG 19:32:47,056(server-2) [org.commonreality.netty.impl.LoggingHandler.handlerAdded] added handler
+DEBUG 19:32:47,057(client-2) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.netty.NettySessionInfo@47b7ec8d
+DEBUG 19:32:47,060(client-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from client
+DEBUG 19:32:47,061(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client
+DEBUG 19:32:47,062(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:32:47,062(server-2) [org.commonreality.netty.impl.LoggingHandler.channelRegistered] Channel registered
+DEBUG 19:32:47,062(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client
+DEBUG 19:32:47,062(server-2) [org.commonreality.net.impl.DefaultSessionListener.created] Created org.commonreality.netty.NettySessionInfo@739aa1cc
+DEBUG 19:32:47,063(client-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from client
+DEBUG 19:32:47,063(server-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:32:47,064(server-2) [org.commonreality.netty.impl.LoggingHandler.channelActive] Channel active
+DEBUG 19:32:47,064(server-2) [org.commonreality.netty.NettySessionInfo.opened] Connection opened
+DEBUG 19:32:47,065(server-2) [org.commonreality.net.impl.DefaultSessionListener.opened] Opened org.commonreality.netty.NettySessionInfo@739aa1cc
+DEBUG 19:32:47,065(server-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from server
+DEBUG 19:32:47,066(server-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from server
+DEBUG 19:32:47,066(server-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from server
+DEBUG 19:32:47,067(server-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from server
+DEBUG 19:32:47,113(server-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 256)
+DEBUG 19:32:47,114(client-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write SimpleLeakAwareByteBuf(PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 256))
+DEBUG 19:32:47,115(client-2) [org.commonreality.netty.NettySessionInfo.write] Writing test from client2
+DEBUG 19:32:47,115(server-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:32:47,116(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client2
+DEBUG 19:32:47,116(server-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:32:47,116(client-2) [org.commonreality.netty.impl.NettyListener.write] Writing test from client2
+DEBUG 19:32:47,117(client-2) [org.commonreality.netty.impl.LoggingHandler.write] app write test from client2
+DEBUG 19:32:47,118(server-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:32:47,122(server-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:32:47,118(client-2) [org.commonreality.netty.impl.LoggingHandler.write] wire write PooledUnsafeDirectByteBuf(ridx: 0, widx: 25, cap: 256)
+DEBUG 19:32:47,123(client-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:32:47,124(client-2) [org.commonreality.netty.impl.LoggingHandler.flush] Channel flush
+DEBUG 19:32:47,125(client-2) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:32:47,126(client-2) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:32:47,143(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRead] wire Channel read PooledUnsafeDirectByteBuf(ridx: 0, widx: 24, cap: 1024)
+DEBUG 19:32:47,143(server-3) [org.commonreality.netty.impl.LoggingHandler.channelRead] wire Channel read PooledUnsafeDirectByteBuf(ridx: 0, widx: 49, cap: 1024)
+DEBUG 19:32:47,147(server-3) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from client
+DEBUG 19:32:47,147(client-1) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from server
+DEBUG 19:32:47,148(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client
+DEBUG 19:32:47,148(client-1) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from server
+DEBUG 19:32:47,148(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client
+DEBUG 19:32:47,149(client-1) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from server
+DEBUG 19:32:47,149(server-3) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from client
+DEBUG 19:32:47,149(client-1) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from server
+DEBUG 19:32:47,150(server-3) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from client routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/1237550792@4b3f42b2
+DEBUG 19:32:47,150(client-1) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from server routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/1237550792@4b3f42b2
+DEBUG 19:32:47,150(server-3) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client
+DEBUG 19:32:47,151(client-1) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from server
+DEBUG 19:32:47,151(server-3) [org.commonreality.netty.impl.LoggingHandler.channelRead] app Channel read test from client2
+DEBUG 19:32:47,151(client-1) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] wire read complete
+DEBUG 19:32:47,152(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client2
+DEBUG 19:32:47,152(client-1) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
+DEBUG 19:32:47,152(server-3) [org.commonreality.netty.impl.NettyListener.channelRead] Received test from client2
+DEBUG 19:32:47,152(client-1) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:32:47,153(server-3) [org.commonreality.netty.impl.NettyMultiplexer.channelRead] Received test from client2
+DEBUG 19:32:47,153(client-1) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+DEBUG 19:32:47,153(server-3) [org.commonreality.net.handler.MessageMultiplexer.accept] Got test from client2 routing to org.commonreality.net.SimpleNetProviderTest$$Lambda$1/1237550792@4b3f42b2
+DEBUG 19:32:47,154(server-3) [org.commonreality.net.SimpleNetProviderTest.lambda$0] got test from client2
+DEBUG 19:32:47,154(server-3) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] wire read complete
+DEBUG 19:32:47,154(server-3) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
+DEBUG 19:32:47,155(server-3) [org.commonreality.netty.impl.LoggingHandler.read] app read
+DEBUG 19:32:47,155(server-3) [org.commonreality.netty.impl.LoggingHandler.read] wire read
