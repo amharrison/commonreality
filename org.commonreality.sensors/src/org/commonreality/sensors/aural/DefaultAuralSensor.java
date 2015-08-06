@@ -80,11 +80,14 @@ public class DefaultAuralSensor extends AbstractSensor
            * let's wait for the clock to update
            */
           IAuthoritativeClock auth = getClock().getAuthority().get();
+
           if (LOGGER.isDebugEnabled()) LOGGER.debug("Waiting");
+
           if (Double.isNaN(nextTime) || nextTime <= currentTime)
             auth.requestAndWaitForChange(null).get();
           else
             auth.requestAndWaitForTime(nextTime, null).get();
+
           if (LOGGER.isDebugEnabled()) LOGGER.debug("Resuming");
 
         }

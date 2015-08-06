@@ -324,31 +324,38 @@ public class BasicClock implements IClock
           // did this actually change?
           if (now <= requestingTime)
           {
-            if (LOGGER.isWarnEnabled())
-              LOGGER.warn(
-                  "",
-                  new RuntimeException(String
-                      .format("Time hasn't incremented, waitForAny ignoring")));
+            if (LOGGER.isDebugEnabled())
+              LOGGER
+                  .debug(
+                      "",
+                      new RuntimeException(
+                          String
+                              .format(
+                                  "Time hasn't incremented since %.4f, waitForAny completion. Left as pending",
+                                  requestingTime)));
             return false;
           }
         }
         else // didn't actually pass
         if (now < targetTime)
         {
-          if (LOGGER.isWarnEnabled())
-            LOGGER.warn(
-                "",
-                new RuntimeException(String.format(
-                    "Timed hasn't incremented, waitFor %.4f ignoring",
-                    targetTime)));
+          if (LOGGER.isDebugEnabled())
+            LOGGER
+                .debug(
+                    "",
+                    new RuntimeException(
+                        String
+                            .format(
+                                "Timed hasn't incremented, waitFor %.4f  completion. Left as pending",
+                                targetTime)));
           return false;
         }
 
         boolean rtn = super.complete(now);
 
-        if (!rtn && LOGGER.isWarnEnabled())
+        if (!rtn && LOGGER.isDebugEnabled())
           LOGGER
-              .warn(String
+              .debug(String
                   .format(
                       "%s rejected completion? requestedAt:%.4f target:%.4f current:%.4f",
                       this, requestingTime, targetTime, now));
@@ -518,14 +525,14 @@ public class BasicClock implements IClock
   protected void futureRejectedCompletion(CompletableFuture<Double> future,
       double triggerTime, double currentTime)
   {
-    // if(LOGGER.isDebugEnabled())
-    LOGGER.warn(String.format("Rejected completion? t: %.5f c:%.5f [%s]",
-        triggerTime, currentTime, future));
-
     if (LOGGER.isDebugEnabled())
+    {
+      LOGGER.debug(String.format("Rejected completion? t: %.5f c:%.5f [%s]",
+          triggerTime, currentTime, future));
       LOGGER
           .debug(String
               .format("future didn't actually complete. Normal if time hasn't actually changed. But ideally this shouldn't happen"));
+    }
   }
 
   protected void futureStillPending(CompletableFuture<Double> future,

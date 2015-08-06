@@ -122,6 +122,6 @@ public class SimpleNetProviderTest
     /*
      * the listeners will do the sending and listening..
      */
-    Thread.sleep(100000);
+    Thread.sleep(1000);
   }
 }

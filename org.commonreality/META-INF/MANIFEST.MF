@@ -2,10 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Common Reality Plug-in
 Bundle-SymbolicName: org.commonreality.core;singleton:=true
-Bundle-Version: 1.2.8.qualifier
+Bundle-Version: 2.0.0.qualifier
 Bundle-Vendor: commonreality.org
-Require-Bundle: org.commonreality.mina,
- org.commonreality.net;bundle-version="1.0.0",
+Require-Bundle: org.commonreality.net;bundle-version="1.0.0",
  org.commonreality.api;bundle-version="1.0.0",
  org.commonreality.time;bundle-version="1.0.0",
  org.commonreality.support;bundle-version="1.0.0"

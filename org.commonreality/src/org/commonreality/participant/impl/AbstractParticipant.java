@@ -515,8 +515,6 @@ public abstract class AbstractParticipant extends ThinParticipant implements
     if (session != null)
     {
       // this could be dangerous.. where else do we sync on session?
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug(String.format("[%s] enter synch %s", getName(), session));
       synchronized (session)
       {
         if (message instanceof IRequest)
@@ -526,19 +524,12 @@ public abstract class AbstractParticipant extends ThinParticipant implements
           if (sa != null) rtn = sa.newAckFuture(message);
         }
       }
-      if (LOGGER.isDebugEnabled())
-        LOGGER.debug(String.format("[%s] exit synch %s", getName(), session));
 
       try
       {
         // not too efficient..
-        if (LOGGER.isDebugEnabled())
-          LOGGER.debug(String.format("[%s] Writing %s to %s", getName(),
-              message, session));
+
         session.write(message);
-        if (LOGGER.isDebugEnabled())
-          LOGGER.debug(String.format("[%s] Wrote %s to %s", getName(), message,
-              session));
 
         // flush when we send a time request?
         if (shouldFlush(message)) session.flush();
@@ -549,8 +540,8 @@ public abstract class AbstractParticipant extends ThinParticipant implements
         LOGGER.error("AbstractParticipant.send threw Exception : ", e);
       }
     }
-    else if (LOGGER.isWarnEnabled())
-      LOGGER.warn(String.format("[%s] Null session, could not send %s ",
+    else if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format("[%s] Null session, could not send %s ",
           getName(), message), new RuntimeException());
 
     if (rtn == null) rtn = EMPTY_ACK;

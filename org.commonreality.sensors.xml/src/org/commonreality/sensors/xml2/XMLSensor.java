@@ -154,8 +154,11 @@ public class XMLSensor extends AbstractSensor
     catch (Exception e)
     {
       if (LOGGER.isWarnEnabled())
-        LOGGER.warn(String.format("Could not open XMLSensor resource %s (%s)",
-            resource, e));
+        LOGGER
+            .warn(String
+                .format(
+                    "Could not open XMLSensor resource %s (%s) Does your project have org.commonreality.sensors.xml as an Eclipse-Buddy?",
+                    resource, e));
       if (LOGGER.isDebugEnabled()) LOGGER.debug("Caused by", e);
     }
   }
