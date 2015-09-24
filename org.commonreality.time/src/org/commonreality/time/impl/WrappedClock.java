@@ -23,14 +23,21 @@ public class WrappedClock implements IClock
   /**
    * Logger definition
    */
-  static private final transient Log LOGGER = LogFactory
-                                                .getLog(WrappedClock.class);
+  static private final transient Log LOGGER     = LogFactory
+                                                    .getLog(WrappedClock.class);
 
-  private final IClock            _delegate;
+  private final IClock               _delegate;
+
+  private double                     _timeShift = 0;
+
+  private WrappedAuthority           _authority;
 
   public WrappedClock(IClock master)
   {
     _delegate = master;
+    Optional<IAuthoritativeClock> auth = master.getAuthority();
+    if (auth.isPresent()) _authority = new WrappedAuthority(auth.get());
+
   }
 
   public IClock getDelegate()
@@ -41,33 +48,35 @@ public class WrappedClock implements IClock
   @Override
   public double getTime()
   {
-    return _delegate.getTime();
+    return _delegate.getTime() + _timeShift;
   }
 
   @Override
   public Optional<IAuthoritativeClock> getAuthority()
   {
-    return _delegate.getAuthority();
+    if (_authority == null) return Optional.empty();
+    return Optional.of(_authority);
   }
 
   @Override
   public CompletableFuture<Double> waitForChange()
   {
-    return _delegate.waitForChange();
+    return _delegate.waitForChange().thenApply(
+        (now) -> BasicClock.constrainPrecision(now + _timeShift));
   }
 
   @Override
   public CompletableFuture<Double> waitForTime(double triggerTime)
   {
-    return _delegate.waitForTime(triggerTime);
+    // correct for time shift..
+    return _delegate.waitForTime(triggerTime - _timeShift).thenApply(
+        (now) -> BasicClock.constrainPrecision(now + _timeShift));
   }
 
-  static public class WrappedAuthority implements IAuthoritativeClock
+  public class WrappedAuthority implements IAuthoritativeClock
   {
 
     IAuthoritativeClock _delegate;
-
-    double              _timeShift = 0;
 
     public WrappedAuthority(IAuthoritativeClock clock)
     {
@@ -77,42 +86,44 @@ public class WrappedClock implements IClock
     @Override
     public double getTime()
     {
-      return 0;
+      return _delegate.getTime() + _timeShift;
     }
 
     @Override
     public Optional<IAuthoritativeClock> getAuthority()
     {
-      // TODO Auto-generated method stub
-      return null;
+      return Optional.of(this);
     }
 
     @Override
     public CompletableFuture<Double> waitForChange()
     {
-      // TODO Auto-generated method stub
-      return null;
+      return _delegate.waitForChange().thenApply(
+          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
     }
 
     @Override
     public CompletableFuture<Double> waitForTime(double triggerTime)
     {
-      // TODO Auto-generated method stub
-      return null;
+      return _delegate.waitForTime(triggerTime - _timeShift).thenApply(
+          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
     }
 
     @Override
     public CompletableFuture<Double> requestAndWaitForChange(Object key)
     {
-      // TODO Auto-generated method stub
-      return null;
+      return _delegate.requestAndWaitForChange(key).thenApply(
+          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
     }
 
     @Override
     public CompletableFuture<Double> requestAndWaitForTime(double targetTime,
         Object key)
     {
-      return requestAndWaitForTime(targetTime, key);
+      return _delegate.requestAndWaitForTime(targetTime - _timeShift, key)
+
+      .thenApply(
+          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
     }
 
     @Override

@@ -32,6 +32,7 @@ public class BasicClock implements IClock
   static private final double        PRECISION;
 
   static private final double        MINIMUM_INCREMENT;
+
   static
   {
     // 0.0001 1/10th millisecond
@@ -234,7 +235,8 @@ public class BasicClock implements IClock
   @Override
   public CompletableFuture<Double> waitForChange()
   {
-    return newFuture(Double.NaN, getTime());
+    return newFuture(Double.NaN, getTime()).thenApply(
+        (now) -> BasicClock.constrainPrecision(now + _timeShift));
   }
 
   @Override
@@ -253,7 +255,7 @@ public class BasicClock implements IClock
       fireExpiredFutures(now);
     }
 
-    return rtn;
+    return rtn.thenApply((n) -> BasicClock.constrainPrecision(n + _timeShift));
   }
 
   /**
@@ -315,29 +317,23 @@ public class BasicClock implements IClock
       @Override
       public boolean complete(Double now)
       {
-        if (Double.isNaN(targetTime))
+        if (Double.isNaN(targetTime)) /*
+         * here's a question, this means that waitForChange is actually:
+         * waitForIncrement. Should there be both literal methods?
+         */
+        // did this actually change?
+        if (now <= requestingTime)
         {
-          /*
-           * here's a question, this means that waitForChange is actually:
-           * waitForIncrement. Should there be both literal methods?
-           */
-          // did this actually change?
-          if (now <= requestingTime)
-          {
-            if (LOGGER.isDebugEnabled())
-              LOGGER
-                  .debug(
-                      "",
-                      new RuntimeException(
-                          String
-                              .format(
-                                  "Time hasn't incremented since %.4f, waitForAny completion. Left as pending",
-                                  requestingTime)));
-            return false;
-          }
+          if (LOGGER.isDebugEnabled()) LOGGER.debug("",
+              new RuntimeException(String.format(
+                  "Time hasn't incremented since %.4f, waitForAny completion. Left as pending",
+                  requestingTime)));
+          return false;
         }
-        else // didn't actually pass
-        if (now < targetTime)
+        else
+          return super.complete(now);
+
+        if (targetTime - now > MINIMUM_INCREMENT)
         {
           if (LOGGER.isDebugEnabled())
             LOGGER
@@ -346,21 +342,23 @@ public class BasicClock implements IClock
                     new RuntimeException(
                         String
                             .format(
-                                "Timed hasn't incremented, waitFor %.4f  completion. Left as pending",
-                                targetTime)));
+                                "Timed hasn't incremented, waitFor(%.5f)  current(%.5f). Left as pending",
+                                targetTime, now)));
           return false;
         }
+        else
+        {
+          boolean rtn = super.complete(targetTime);
 
-        boolean rtn = super.complete(now);
+          if (!rtn && LOGGER.isDebugEnabled())
+            LOGGER
+                .debug(String
+                    .format(
+                        "%s rejected completion? requestedAt:%.4f target:%.4f current:%.4f",
+                        this, requestingTime, targetTime, now));
 
-        if (!rtn && LOGGER.isDebugEnabled())
-          LOGGER
-              .debug(String
-                  .format(
-                      "%s rejected completion? requestedAt:%.4f target:%.4f current:%.4f",
-                      this, requestingTime, targetTime, now));
-
-        return rtn;
+          return rtn;
+        }
       }
     };
 
@@ -486,8 +484,8 @@ public class BasicClock implements IClock
           }
           else if (LOGGER.isDebugEnabled())
             LOGGER.debug(String.format(
-                "Future was canceled [%s].trigger=%.4f @ %.4f", future,
-                trigger, now));
+                "Future was canceled [%s].trigger=%.4f @ %.4f",
+                  future, trigger, now));
 
           // leave it. so that we can remove it further down
         }
@@ -500,13 +498,19 @@ public class BasicClock implements IClock
           }
         }
         else if (LOGGER.isDebugEnabled())
-          LOGGER.debug(String.format("[%d].trigger = %.4f", future.hashCode(),
+          LOGGER.debug(String.format("Completed [%s].trigger = %.4f", future,
               trigger));
       }
       else
       {
-        itr.remove();
-        futureStillPending(future, trigger, now);
+        boolean closeEnough = Math.abs(trigger - now) <= MINIMUM_INCREMENT;
+        if (closeEnough)
+          future.complete(trigger);
+        else
+        {
+          futureStillPending(future, trigger, now);
+          itr.remove();
+        }
       }
     }
 
@@ -538,14 +542,12 @@ public class BasicClock implements IClock
   protected void futureStillPending(CompletableFuture<Double> future,
       double triggerTime, double currentTime)
   {
-    if (LOGGER.isDebugEnabled())
-      LOGGER.debug(String.format("Pending completion t: %.5f c:%.5f [%s]",
-          triggerTime, currentTime, future));
+    double delta = triggerTime - currentTime;
 
-    // if (Math.abs(triggerTime - currentTime) < 0.001)
-    // LOGGER.warn(String.format(
-    // "Potential lost update due to precision. triggerTime: %.5f  currentTime: %.5f",
-    // triggerTime, currentTime));
+    if (LOGGER.isDebugEnabled())
+      LOGGER.debug(String.format(
+          "Pending completion t: %.5f c:%.5f [%s]  delta:%.9f, belowThresh=%s",
+          triggerTime, currentTime, future, delta, delta < MINIMUM_INCREMENT));
   }
 
   /**
@@ -604,7 +606,8 @@ public class BasicClock implements IClock
       BasicClock.runLocked(bc.getLock(), () -> {
         if (requestTimeChange(fTargetTime, key)) bc.setLocalTime(fTargetTime);
       });
-      return rtn;
+      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
+          + bc._timeShift));
     }
 
     @Override
@@ -618,7 +621,8 @@ public class BasicClock implements IClock
             if (requestTimeChange(Double.NaN, key))
               bc.setLocalTime(getTime() + bc._minimumTimeIncrement);
           });
-      return rtn;
+      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
+          + bc._timeShift));
     }
 
     @Override

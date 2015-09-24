@@ -213,9 +213,11 @@ public class OwnedClock extends BasicClock
         bc._changeNotifier.accept(bc.getLocalTime(), bc);
       }
       else if (LOGGER.isDebugEnabled())
-        LOGGER.debug(String.format("Not notifying, no change in time"));
+        LOGGER.debug(String.format("Not notifying, %s",
+            bc._changeNotifier == null ? "no one to notify" : "no change"));
 
-      return rtn;
+      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
+          + getLocalTimeShift()));
     }
 
     @Override
@@ -248,9 +250,11 @@ public class OwnedClock extends BasicClock
         bc._changeNotifier.accept(bc.getLocalTime(), bc);
       }
       else if (LOGGER.isDebugEnabled())
-        LOGGER.debug(String.format("Not notifying, no change in time"));
+        LOGGER.debug(String.format("Not notifying, %s",
+            bc._changeNotifier == null ? "noone to notify" : "no change"));
 
-      return rtn;
+      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
+          + getLocalTimeShift()));
     }
 
     /**
@@ -294,8 +298,8 @@ public class OwnedClock extends BasicClock
 
       if (LOGGER.isDebugEnabled())
         LOGGER.debug(String.format(
-            "Minimum time : %.4f, won't wake up this cycle : %s", rtn,
-            _requestedTimes));
+            "Minimum time : %.4f, These agents won't wake up this cycle : %s",
+            rtn, _requestedTimes));
 
       return rtn;
     }
