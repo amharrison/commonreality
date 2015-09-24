@@ -22,7 +22,6 @@ public class WrappedClockTest
   static private final transient Log LOGGER = LogFactory
                                                 .getLog(WrappedClockTest.class);
 
-
   /**
    * create three clocks (owned ("a","b"), and two wrapped clocks
    * 
@@ -37,7 +36,6 @@ public class WrappedClockTest
     WrappedClock two = new WrappedClock(master);
     return new IClock[] { master, one, two };
   }
-
 
   @Test
   public void testGetTime()
@@ -77,8 +75,8 @@ public class WrappedClockTest
     Assert.assertEquals(0, clocks[0].getTime(), 0.001);
 
     CompletableFuture<Double> reached = clocks[1].waitForChange(); // change
-                                                               // relative to
-                                                               // current
+    // relative to
+    // current
     // clock hasn't changed yet
     Assert.assertTrue(!reached.isDone());
 
@@ -126,38 +124,41 @@ public class WrappedClockTest
     Assert.assertTrue(reached.isDone());
   }
 
-  // @Test
-  // public void testTimeShift()
-  // {
-  // IClock[] clocks = createNewClocks();
-  //
-  // Assert.assertEquals(0, clocks[0].getTime(), 0.001);
-  //
-  // clocks[1].getAuthority().get().setLocalTimeShift(1); // "a" is 1 second old
-  // // at the start of sim
-  // clocks[2].getAuthority().get().setLocalTimeShift(-1); // "b" is -1 second
-  // // old at the start of
-  // // sim
-  //
-  // // clock 1 is already at 1, this should be immediate
-  // CompletableFuture<Double> a = clocks[1].getAuthority().get()
-  // .requestAndWaitForTime(1, "a");
-  //
-  // // clock 2 is at -1, so this will not have elapsed
-  // CompletableFuture<Double> b = clocks[2].getAuthority().get()
-  // .requestAndWaitForTime(0.5, "b");
-  //
-  // Assert.assertTrue(a.isDone());
-  // Assert.assertTrue(!b.isDone());
-  //
-  //
-  // Assert.assertEquals(0.5, clocks[2].getTime(), 0.001);
-  // Assert.assertTrue(!reached.isDone());
-  //
-  // clocks[1].getAuthority().get().requestAndWaitForChange("a");
-  // clocks[2].getAuthority().get().requestAndWaitForTime(1, "b");
-  // Assert.assertEquals(1, clocks[1].getTime(), 0.001);
-  //
-  // Assert.assertTrue(reached.isDone());
-  // }
+  @Test
+  public void testTimeShift()
+  {
+    IClock[] clocks = createNewClocks();
+
+    Assert.assertEquals(0, clocks[0].getTime(), 0.001);
+
+    clocks[1].getAuthority().get().setLocalTimeShift(1);
+    clocks[2].getAuthority().get().setLocalTimeShift(-1);
+
+    Assert.assertEquals(1, clocks[1].getTime(), 0.001);
+    Assert.assertEquals(-1, clocks[2].getTime(), 0.001);
+
+    Assert.assertTrue(0 == clocks[0].getAuthority().get().getLocalTimeShift());
+    Assert.assertTrue(1 == clocks[1].getAuthority().get().getLocalTimeShift());
+    Assert.assertTrue(-1 == clocks[2].getAuthority().get().getLocalTimeShift());
+
+    CompletableFuture<Double> a = clocks[1].getAuthority().get()
+        .requestAndWaitForChange("a");
+
+
+    CompletableFuture<Double> b = clocks[2].getAuthority().get()
+        .requestAndWaitForTime(0.5, "b");
+
+    Assert.assertTrue(a.isDone());
+    Assert.assertTrue(b.isDone());
+    Assert.assertEquals(0.5, clocks[2].getTime(), 0.001);
+
+
+    clocks[1].getAuthority().get().requestAndWaitForChange("a");
+    b = clocks[2].getAuthority().get().requestAndWaitForTime(2, "b");
+    
+    Assert.assertEquals(4, clocks[1].getTime(), 0.001);
+    Assert.assertEquals(2, clocks[2].getTime(), 0.001);
+
+    Assert.assertTrue(b.isDone());
+  }
 }
