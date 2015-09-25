@@ -312,10 +312,9 @@ public abstract class AbstractSensor extends AbstractParticipant implements
   public void connect() throws Exception
   {
     super.connect();
-    IClock clock = new NetworkedClock(0.05, (requestedTime, netClock) -> {
-      // clock time is local, but network is global.
-        double timeShift = netClock.getAuthority().get().getLocalTimeShift();
-        send(new RequestTime(getIdentifier(), requestedTime - timeShift));
+    IClock clock = new NetworkedClock(0.05, (globalTime, netClock) -> {
+      // timeshift is taken care of by the clock
+        send(new RequestTime(getIdentifier(), globalTime));
       });
     setClock(clock);
     CommonReality.addSensor(this);
