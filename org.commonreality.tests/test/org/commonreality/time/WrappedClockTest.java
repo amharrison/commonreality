@@ -125,7 +125,7 @@ public class WrappedClockTest
   }
 
   @Test
-  public void testTimeShift()
+  public void testTimeShift() throws Exception
   {
     IClock[] clocks = createNewClocks();
 
@@ -149,16 +149,47 @@ public class WrappedClockTest
         .requestAndWaitForTime(0.5, "b");
 
     Assert.assertTrue(a.isDone());
+    Assert.assertEquals(2.5, clocks[1].getTime(), 0.001);
+    Assert.assertEquals(2.5, a.get(), 0.001);
+
     Assert.assertTrue(b.isDone());
     Assert.assertEquals(0.5, clocks[2].getTime(), 0.001);
+    Assert.assertEquals(0.5, b.get(), 0.001);
 
 
     clocks[1].getAuthority().get().requestAndWaitForChange("a");
     b = clocks[2].getAuthority().get().requestAndWaitForTime(2, "b");
     
+
     Assert.assertEquals(4, clocks[1].getTime(), 0.001);
     Assert.assertEquals(2, clocks[2].getTime(), 0.001);
 
     Assert.assertTrue(b.isDone());
+    Assert.assertEquals(2, b.get(), 0.001);
+
+    // for a time past
+    a = clocks[1].getAuthority().get().requestAndWaitForTime(3, "a");
+    clocks[2].getAuthority().get().requestAndWaitForChange("b");
+
+    Assert.assertTrue(a.isDone());
+    Assert.assertEquals(4, a.get(), 0.001);
+
+    // for identical
+    a = clocks[1].getAuthority().get().requestAndWaitForTime(4, "a");
+    // will have already passed for a
+    clocks[2].getAuthority().get().requestAndWaitForChange("b");
+
+    Assert.assertTrue(a.isDone());
+    Assert.assertEquals(4, a.get(), 0.001);
+
+    // for future
+    a = clocks[1].getAuthority().get().requestAndWaitForTime(5, "a");
+    // will have already passed for a
+    b = clocks[2].getAuthority().get().requestAndWaitForChange("b");
+
+    Assert.assertTrue(a.isDone());
+    Assert.assertEquals(5, a.get(), 0.001);
+    Assert.assertEquals(3, b.get(), 0.001);
+
   }
 }
