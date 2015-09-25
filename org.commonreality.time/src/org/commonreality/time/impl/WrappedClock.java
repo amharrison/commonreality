@@ -61,8 +61,7 @@ public class WrappedClock implements IClock
   @Override
   public CompletableFuture<Double> waitForChange()
   {
-    return _delegate.waitForChange().thenApply(
-        (now) -> BasicClock.constrainPrecision(now + _timeShift));
+    return _delegate.waitForChange().thenApply((now) -> this.getTime());
   }
 
   @Override
@@ -70,7 +69,7 @@ public class WrappedClock implements IClock
   {
     // correct for time shift..
     return _delegate.waitForTime(triggerTime - _timeShift).thenApply(
-        (now) -> BasicClock.constrainPrecision(now + _timeShift));
+        (now) -> this.getTime());
   }
 
   public class WrappedAuthority implements IAuthoritativeClock
@@ -98,22 +97,21 @@ public class WrappedClock implements IClock
     @Override
     public CompletableFuture<Double> waitForChange()
     {
-      return _delegate.waitForChange().thenApply(
-          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
+      return _delegate.waitForChange().thenApply((now) -> this.getTime());
     }
 
     @Override
     public CompletableFuture<Double> waitForTime(double triggerTime)
     {
       return _delegate.waitForTime(triggerTime - _timeShift).thenApply(
-          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
+          (now) -> this.getTime());
     }
 
     @Override
     public CompletableFuture<Double> requestAndWaitForChange(Object key)
     {
       return _delegate.requestAndWaitForChange(key).thenApply(
-          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
+          (now) -> this.getTime());
     }
 
     @Override
@@ -122,8 +120,7 @@ public class WrappedClock implements IClock
     {
       return _delegate.requestAndWaitForTime(targetTime - _timeShift, key)
 
-      .thenApply(
-          (now) -> BasicClock.constrainPrecision(now + getLocalTimeShift()));
+      .thenApply((now) -> this.getTime());
     }
 
     @Override

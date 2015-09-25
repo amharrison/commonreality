@@ -36,6 +36,11 @@ public class NetworkedClock extends BasicClock
 
   private long                                     _postSendTime;
 
+  /**
+   * @param minimumTimeIncrement
+   * @param networkSendCommand
+   *          accepts the global (timeshift corrected) target time
+   */
   public NetworkedClock(double minimumTimeIncrement,
       BiConsumer<Double, NetworkedClock> networkSendCommand)
   {
@@ -65,12 +70,13 @@ public class NetworkedClock extends BasicClock
   private void timeChangeReceived(double globalTime)
   {
     if (LOGGER.isDebugEnabled())
-      LOGGER.debug(String.format("Time update received : %.4f", globalTime));
+      LOGGER.debug(String.format("global Time update received : %.4f",
+          globalTime));
     // set global time and notify
     double currentGlobal = getGlobalTime();
     if (globalTime < currentGlobal)
       LOGGER.warn(String.format(
-          "Networked clock got a time regression! was:%.5f  now:%.5f",
+          "Networked clock got a global time regression! was:%.5f  now:%.5f",
           currentGlobal, globalTime));
 
     setGlobalTime(globalTime);
@@ -102,12 +108,14 @@ public class NetworkedClock extends BasicClock
       {
         _postSendTime = 0;
 
+        double globalTime = BasicClock.constrainPrecision(triggerTime
+            - getTimeShift());
         if (LOGGER.isDebugEnabled())
           LOGGER
-              .debug(String.format("Sending clock request %.4f",
-              triggerTime));
+.debug(String.format("Sending global clock request %.4f",
+              globalTime));
         _preSendTime = System.nanoTime();
-        _networkSendCommand.accept(triggerTime - getTimeShift(), this);
+        _networkSendCommand.accept(globalTime, this);
         _postSendTime = System.nanoTime();
       }
     }
@@ -166,7 +174,7 @@ public class NetworkedClock extends BasicClock
       // });
       requestTimeChange(fTargetTime, key);
 
-      return rtn;
+      return rtn.thenApply((t) -> getDelegate().getTime());
     }
 
     @Override
@@ -181,7 +189,7 @@ public class NetworkedClock extends BasicClock
       // bc.setLocalTime(getTime() + bc._minimumTimeIncrement);
       // });
       requestTimeChange(Double.NaN, key);
-      return rtn;
+      return rtn.thenApply((t) -> getDelegate().getTime());
     }
 
   }

@@ -216,8 +216,13 @@ public class OwnedClock extends BasicClock
         LOGGER.debug(String.format("Not notifying, %s",
             bc._changeNotifier == null ? "no one to notify" : "no change"));
 
-      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
-          + getLocalTimeShift()));
+      /*
+       * if already elapsed, lets fire
+       */
+      double now = getTime();
+      if (now > fTargetTime) bc.fireExpiredFutures(now);
+
+      return rtn.thenApply((t) -> this.getTime());
     }
 
     @Override
@@ -253,8 +258,7 @@ public class OwnedClock extends BasicClock
         LOGGER.debug(String.format("Not notifying, %s",
             bc._changeNotifier == null ? "noone to notify" : "no change"));
 
-      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
-          + getLocalTimeShift()));
+      return rtn.thenApply((now) -> this.getTime());
     }
 
     /**

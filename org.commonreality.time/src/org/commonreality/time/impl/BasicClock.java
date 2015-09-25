@@ -326,8 +326,8 @@ public class BasicClock implements IClock
         {
           if (LOGGER.isDebugEnabled()) LOGGER.debug("",
               new RuntimeException(String.format(
-                  "Time hasn't incremented since %.4f, waitForAny completion. Left as pending",
-                  requestingTime)));
+                                  "%s Time hasn't incremented since %.4f, waitForAny completion. Left as pending",
+                                  this, requestingTime)));
           return false;
         }
         else
@@ -342,8 +342,8 @@ public class BasicClock implements IClock
                     new RuntimeException(
                         String
                             .format(
-                                "Timed hasn't incremented, waitFor(%.5f)  current(%.5f). Left as pending",
-                                targetTime, now)));
+                                "%s Timed hasn't incremented, waitFor(%.5f)  current(%.5f). Left as pending",
+                                this, targetTime, now)));
           return false;
         }
         else
@@ -606,8 +606,7 @@ public class BasicClock implements IClock
       BasicClock.runLocked(bc.getLock(), () -> {
         if (requestTimeChange(fTargetTime, key)) bc.setLocalTime(fTargetTime);
       });
-      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
-          + bc._timeShift));
+      return rtn.thenApply((now) -> getTime());
     }
 
     @Override
@@ -621,8 +620,7 @@ public class BasicClock implements IClock
             if (requestTimeChange(Double.NaN, key))
               bc.setLocalTime(getTime() + bc._minimumTimeIncrement);
           });
-      return rtn.thenApply((now) -> BasicClock.constrainPrecision(now
-          + bc._timeShift));
+      return rtn.thenApply((now) -> getTime());
     }
 
     @Override
