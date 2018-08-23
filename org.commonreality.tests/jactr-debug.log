@@ -275,3 +275,6 @@ DEBUG 19:32:47,154(server-3) [org.commonreality.netty.impl.LoggingHandler.channe
 DEBUG 19:32:47,154(server-3) [org.commonreality.netty.impl.LoggingHandler.channelReadComplete] app read complete
 DEBUG 19:32:47,155(server-3) [org.commonreality.netty.impl.LoggingHandler.read] app read
 DEBUG 19:32:47,155(server-3) [org.commonreality.netty.impl.LoggingHandler.read] wire read
+WARN  19:49:42,998(main) [org.commonreality.time.impl.BasicClock.waitForTime] time has already elapsed, forcing firing
+WARN  19:50:01,232(main) [org.commonreality.time.impl.BasicClock.waitForTime] time has already elapsed, forcing firing
+WARN  19:50:04,817(main) [org.commonreality.time.impl.BasicClock.waitForTime] time has already elapsed, forcing firing
