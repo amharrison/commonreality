@@ -26,3 +26,4 @@ Export-Package: org.commonreality.agents,
  org.commonreality.time
 Bundle-ClassPath: .
 Bundle-ActivationPolicy: lazy
+Require-Bundle: org.commonreality.support;bundle-version="1.0.0"

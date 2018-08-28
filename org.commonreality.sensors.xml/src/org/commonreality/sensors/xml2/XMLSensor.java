@@ -18,8 +18,6 @@ import java.util.concurrent.ExecutorService;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import javolution.util.FastList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
@@ -29,6 +27,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import javolution.util.FastList;
 
 public class XMLSensor extends AbstractSensor
 {
@@ -69,9 +69,6 @@ public class XMLSensor extends AbstractSensor
   {
     super.start();
 
-    _nextTimeGuess = 0;
-    _processor = new XMLProcessor(this);
-    _executor = getPeriodicExecutor();
 
     requestTimeUpdate(0);
   }
@@ -96,6 +93,10 @@ public class XMLSensor extends AbstractSensor
   @Override
   public void configure(Map<String, String> options) throws Exception
   {
+    _nextTimeGuess = 0;
+    _processor = new XMLProcessor(this);
+    _executor = getPeriodicExecutor();
+
     if (options.containsKey(DATA_URL)) load(options.get(DATA_URL));
   }
 

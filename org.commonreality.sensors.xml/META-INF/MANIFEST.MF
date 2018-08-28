@@ -6,14 +6,11 @@ Bundle-Version: 2.0.0.qualifier
 Bundle-Vendor: jactr.org
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.commonreality.core;bundle-version="1.2.0",
- org.jactr;bundle-version="1.2.0";resolution:=optional,
  org.commonreality.api;bundle-version="1.0.0",
  org.commonreality.net;bundle-version="1.0.0",
  org.commonreality.time;bundle-version="1.0.0",
  org.commonreality.support;bundle-version="1.0.0"
-Export-Package: org.commonreality.sensors.xml,
- org.commonreality.sensors.xml.actions,
- org.commonreality.sensors.xml2
+Export-Package: org.commonreality.sensors.xml2
 Eclipse-BuddyPolicy: registered
 Eclipse-RegisterBuddy: org.jactr, org.jactr.io, org.commonreality.core, org.apache.log4j, org.apache.commons.logging
 Bundle-ClassPath: .

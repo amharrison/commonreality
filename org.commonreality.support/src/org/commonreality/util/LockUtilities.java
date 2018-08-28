@@ -83,8 +83,9 @@ public class LockUtilities
 
   static protected void attemptUnlock(Lock lock, Object with)
   {
-    _recentLocks.get(lock).close();
     lock.unlock();
+    LockInfo li = _recentLocks.remove(lock);
+    if (li != null) li.close();
   }
 
   static protected boolean attemptLock(Lock lock, Object with)

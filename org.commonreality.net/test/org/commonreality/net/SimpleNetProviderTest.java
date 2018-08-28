@@ -5,11 +5,11 @@ package org.commonreality.net;
  */
 import java.net.SocketAddress;
 import java.util.Collections;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.commonreality.executor.GeneralThreadFactory;
-import org.commonreality.mina.MINANetworkingProvider;
 import org.commonreality.net.handler.IMessageHandler;
 import org.commonreality.net.impl.DefaultSessionListener;
 import org.commonreality.net.protocol.IProtocolConfiguration;
@@ -19,8 +19,7 @@ import org.commonreality.net.service.IServerService;
 import org.commonreality.net.session.ISessionInfo;
 import org.commonreality.net.session.ISessionListener;
 import org.commonreality.net.transport.ITransportProvider;
-import org.commonreality.netty.NettyNetworkingProvider;
-import org.junit.Test;
+import org.junit.Assert;
 
 public class SimpleNetProviderTest
 {
@@ -31,17 +30,7 @@ public class SimpleNetProviderTest
                                                 .getLog(SimpleNetProviderTest.class);
 
 
-  @Test
-  public void testMINANIO() throws Exception
-  {
-    testNIOSerializer(MINANetworkingProvider.class.getName());
-  }
 
-  @Test
-  public void testNettyNIO() throws Exception
-  {
-    testNIOSerializer(NettyNetworkingProvider.class.getName());
-  }
 
   public void testNIOSerializer(String providerName) throws Exception
   {
@@ -60,8 +49,11 @@ public class SimpleNetProviderTest
 
     SocketAddress address = transport.createAddress("localhost", "0");
 
+    AtomicInteger messageCount = new AtomicInteger(0);
+
     IMessageHandler<String> handler = (s, m) -> {
       LOGGER.debug(String.format("got %s", m));
+      messageCount.incrementAndGet();
     };
 
     ISessionListener serverListener = new DefaultSessionListener() {
@@ -104,11 +96,11 @@ public class SimpleNetProviderTest
 
     server.configure(transport, protocol,
         Collections.singletonMap(String.class, handler), serverListener,
-        new GeneralThreadFactory("server"));
+        Executors.defaultThreadFactory());
 
     client.configure(transport, protocol,
         Collections.singletonMap(String.class, handler), clientListener,
-        new GeneralThreadFactory("client"));
+        Executors.defaultThreadFactory());
 
     SocketAddress hostingAddress = server.start(address); // where we are
                                                           // actually listening
@@ -123,5 +115,7 @@ public class SimpleNetProviderTest
      * the listeners will do the sending and listening..
      */
     Thread.sleep(1000);
+
+    Assert.assertEquals(messageCount.get(), 3);
   }
 }

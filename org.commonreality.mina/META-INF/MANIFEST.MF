@@ -7,7 +7,8 @@ Bundle-Vendor: jactr.org
 Require-Bundle: org.commonreality.mina.core,
  org.commonreality.net;bundle-version="1.0.0",
  org.commonreality.support;bundle-version="1.0.0",
- org.apache.log4j;bundle-version="1.2.15";resolution:=optional
+ org.apache.log4j;bundle-version="1.2.15";resolution:=optional,
+ org.junit;bundle-version="4.12.0";resolution:=optional
 Export-Package: org.commonreality.mina,
  org.commonreality.mina.protocol,
  org.commonreality.mina.service,

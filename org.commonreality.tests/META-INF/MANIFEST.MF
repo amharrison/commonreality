@@ -13,6 +13,4 @@ Require-Bundle: org.commonreality.core,
  org.commonreality.support;bundle-version="1.0.0",
  org.commonreality.netty;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: org.commonreality.net,
- org.commonreality.reality
 Eclipse-RegisterBuddy: org.apache.log4j 
