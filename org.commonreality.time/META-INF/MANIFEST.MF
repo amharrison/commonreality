@@ -5,7 +5,6 @@ Bundle-SymbolicName: org.commonreality.time;singleton:=true
 Bundle-Version: 2.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.commonreality.api;bundle-version="1.0.0",
- org.junit,
  org.commonreality.support;bundle-version="1.0.0",
  org.apache.log4j;bundle-version="1.2.15";resolution:=optional
 Export-Package: org.commonreality.time.impl

@@ -9,7 +9,6 @@ Bundle-ClassPath: lib/netty-buffer-5.0.0.Alpha2.jar,
  lib/netty-common-5.0.0.Alpha2.jar,
  lib/netty-handler-5.0.0.Alpha2.jar,
  lib/netty-transport-5.0.0.Alpha2.jar,
- .,
  lib/netty-resolver-5.0.0.Alpha2.jar
 Export-Package: io.netty.bootstrap,
  io.netty.buffer,

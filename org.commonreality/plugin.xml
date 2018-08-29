@@ -58,9 +58,5 @@
       </sensor>
    </extension>
 
-   <extension point="org.eclipse.pde.core.javadoc">
-     <javadoc path="javadoc/" archive="true">
-       <plugin id="org.commonreality"/>
-     </javadoc>
-   </extension>
+   
 </plugin>
