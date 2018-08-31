@@ -1,11 +1,10 @@
-package org.commonreality.efferent.impl;
+package org.commonreality.efferent;
 
 /*
  * default logging
  */
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.commonreality.efferent.IEfferentCommand;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.object.identifier.ISensoryIdentifier;
 import org.commonreality.object.manager.impl.BasicObject;

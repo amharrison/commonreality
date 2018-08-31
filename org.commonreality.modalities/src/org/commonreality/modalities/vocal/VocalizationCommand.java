@@ -1,9 +1,6 @@
 package org.commonreality.modalities.vocal;
 
-/*
- * default logging
- */
-import org.commonreality.efferent.impl.AbstractEfferentCommand;
+import org.commonreality.efferent.AbstractEfferentCommand;
 import org.commonreality.identifier.IIdentifier;
 
 public class VocalizationCommand extends AbstractEfferentCommand

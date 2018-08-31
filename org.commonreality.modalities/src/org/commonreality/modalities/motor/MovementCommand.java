@@ -9,9 +9,9 @@ import java.util.Collections;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.commonreality.efferent.AbstractEfferentCommand;
 import org.commonreality.efferent.ICompoundCommand;
 import org.commonreality.efferent.IEfferentCommand;
-import org.commonreality.efferent.impl.AbstractEfferentCommand;
 import org.commonreality.identifier.IIdentifier;
 
 public class MovementCommand extends AbstractEfferentCommand implements

@@ -6,8 +6,8 @@ package org.commonreality.modalities.motor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.agents.IAgent;
+import org.commonreality.efferent.AbstractEfferentCommandTemplate;
 import org.commonreality.efferent.IEfferentCommand;
-import org.commonreality.efferent.impl.AbstractEfferentCommandTemplate;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.object.IEfferentObject;
 

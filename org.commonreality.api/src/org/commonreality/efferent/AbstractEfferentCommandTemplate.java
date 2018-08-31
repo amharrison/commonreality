@@ -1,12 +1,9 @@
-package org.commonreality.efferent.impl;
+package org.commonreality.efferent;
 
 /*
  * default logging
  */
 import org.commonreality.agents.IAgent;
-import org.commonreality.efferent.IEfferentCommand;
-import org.commonreality.efferent.IEfferentCommandManager;
-import org.commonreality.efferent.IEfferentCommandTemplate;
 import org.commonreality.identifier.IIdentifier;
 import org.commonreality.object.IEfferentObject;
 import org.commonreality.object.manager.IRequestableObjectManager;
