@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,8 +29,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javolution.util.FastList;
-
 public class XMLSensor extends AbstractSensor
 {
   /**
@@ -42,8 +41,7 @@ public class XMLSensor extends AbstractSensor
 
   private CompletableFuture<Double>                           _currentTimeRequest;
 
-  private List<Element>                                       _processingFrames = FastList
-                                                                                    .newInstance();
+  private List<Element>                                       _processingFrames = new ArrayList<>();
 
   private Element                                             _lastElementAdded;
 
@@ -324,8 +322,8 @@ public class XMLSensor extends AbstractSensor
    */
   protected void processExpiredFrames(double currentTime)
   {
-    FastList<Element> expired = FastList.newInstance();
-    FastList<IIdentifier> agentIds = FastList.newInstance();
+    List<Element> expired = new ArrayList<>();
+    List<IIdentifier> agentIds = new ArrayList<>();
 
     double nextFrameTime = getExpiredFrames(currentTime, expired);
 
@@ -372,8 +370,6 @@ public class XMLSensor extends AbstractSensor
     _nextTimeGuess = nextFrameTime;
     // }
 
-    FastList.recycle(agentIds);
-    FastList.recycle(expired);
   }
 
   /**

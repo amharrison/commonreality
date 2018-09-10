@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-import javolution.util.FastList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
@@ -120,7 +118,7 @@ public class XMLProcessor
   public Collection<IMessage> processFrame(IIdentifier forAgent, Element frame,
       boolean sendDataRequestsNow)
   {
-    Collection<IMessage> data = FastList.newInstance();
+    Collection<IMessage> data = new ArrayList<>();
     for (IXMLProcessor processor : _processors)
       try
       {
@@ -162,6 +160,6 @@ public class XMLProcessor
     // lastId = message.getMessageId();
     // lastType = message.getClass().getSimpleName();
 
-    if (data instanceof FastList) FastList.recycle((FastList) data);
+
   }
 }
