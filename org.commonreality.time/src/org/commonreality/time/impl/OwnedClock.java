@@ -1,5 +1,6 @@
 package org.commonreality.time.impl;
 
+import java.util.ArrayList;
 /*
  * default logging
  */
@@ -11,8 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-
-import javolution.util.FastList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -144,7 +143,7 @@ public class OwnedClock extends BasicClock
 
     public Collection<Object> getUnaccountedForOwners()
     {
-      Collection<Object> container = FastList.newInstance();
+      Collection<Object> container = new ArrayList<>();
       BasicClock.runLocked(getDelegate().getLock(), () -> {
         container.addAll(_ownerKeys);
         container.removeAll(_ownersAccountedFor);

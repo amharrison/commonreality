@@ -1,19 +1,19 @@
 package org.commonreality.time.impl;
 
+import java.util.ArrayList;
 /*
  * default logging
  */
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import javolution.util.FastList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -453,8 +453,7 @@ public class BasicClock implements IClock
   protected Collection<CompletableFuture<Double>> removeExpiredCompletables(
       final double now)
   {
-    final FastList<Map.Entry<CompletableFuture<Double>, Double>> pending = FastList
-        .newInstance();
+    final List<Map.Entry<CompletableFuture<Double>, Double>> pending = new ArrayList<>();
 
     // grab the pending from the lock.. we must do the processing outside of the
     // lock.
@@ -521,7 +520,7 @@ public class BasicClock implements IClock
       pending.forEach((e) -> _pendingCompletables.remove(e.getKey()));
     });
 
-    FastList.recycle(pending);
+    
 
     return null;
   }
