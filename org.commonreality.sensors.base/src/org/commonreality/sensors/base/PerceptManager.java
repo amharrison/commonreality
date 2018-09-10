@@ -1,17 +1,16 @@
 package org.commonreality.sensors.base;
 
+import java.util.ArrayList;
 /*
  * default logging
  */
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-
-import javolution.util.FastList;
-import javolution.util.FastSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -82,8 +81,8 @@ public class PerceptManager
     _dirtyObjects = new HashSet<Object>();
     _objectsInLimbo = new HashMap<IIdentifier, ISensoryObject>();
     _nullObjects = new WeakHashMap<Object, Object>();
-    _creators = new FastList<IObjectCreator>();
-    _processors = new FastList<IObjectProcessor>();
+    _creators = new ArrayList<IObjectCreator>();
+    _processors = new ArrayList<IObjectProcessor>();
     _toBeDeleted = new HashSet<Object>();
   }
 
@@ -159,9 +158,9 @@ public class PerceptManager
     _objectToKey.remove(object);
   }
 
-  private FastSet<IObjectKey> createKeys(Object object)
+  private Set<IObjectKey> createKeys(Object object)
   {
-    FastSet<IObjectKey> rtn = FastSet.newInstance();
+    Set<IObjectKey> rtn = new HashSet<>();
     IAgentObjectManager manager = _sensor.getAgentObjectManager();
     for (IObjectCreator creator : _creators)
       if (creator.handles(object))
@@ -208,8 +207,8 @@ public class PerceptManager
 
   private void process(Collection<IObjectKey> keys)
   {
-    FastList<IObjectDelta> updates = FastList.newInstance();
-    FastList<IMutableObject> newAdds = FastList.newInstance();
+    List<IObjectDelta> updates = new ArrayList<>(keys.size());
+    List<IMutableObject> newAdds = new ArrayList<>(keys.size());
 
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(String.format("Processing keys  %s", keys));
@@ -306,14 +305,14 @@ public class PerceptManager
       _sensor.update(updates);
     }
 
-    FastList.recycle(updates);
+
   }
   
   private void remove(Collection<Object> container)
   {
     if (container.size() != 0)
     {
-      FastList<ISensoryIdentifier> toBeRemoved = FastList.newInstance();
+      List<ISensoryIdentifier> toBeRemoved = new ArrayList<>();
 
       for (Object object : container)
       {
@@ -338,14 +337,12 @@ public class PerceptManager
         LOGGER.debug(String.format("Removing %s", toBeRemoved));
 
       _sensor.removeIdentifiers(toBeRemoved);
-
-      FastList.recycle(toBeRemoved);
     }
   }
 
   public void processDirtyObjects()
   {
-    FastList<Object> container = FastList.newInstance();
+    List<Object> container = new ArrayList<>();
 
     synchronized (this)
     {
@@ -405,8 +402,6 @@ public class PerceptManager
         _nullObjects.put(object, null);
       }
     }
-    
 
-    FastList.recycle(container);
   }
 }

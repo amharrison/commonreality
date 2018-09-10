@@ -23,8 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
-import javolution.util.FastList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.commonreality.identifier.IIdentifier;
@@ -240,9 +238,9 @@ public abstract class BaseSensor extends AbstractSensor
     IIdentifier agentId = agent.getIdentifier();
     if (!_toBeAdded.containsKey(agentId))
     {
-      _toBeAdded.put(agentId, new FastList<ISimulationObject>());
-      _toBeChanged.put(agentId, new FastList<IObjectDelta>());
-      _toBeRemoved.put(agentId, new FastList<IIdentifier>());
+      _toBeAdded.put(agentId, new ArrayList<ISimulationObject>());
+      _toBeChanged.put(agentId, new ArrayList<IObjectDelta>());
+      _toBeRemoved.put(agentId, new ArrayList<IIdentifier>());
     }
   }
 
