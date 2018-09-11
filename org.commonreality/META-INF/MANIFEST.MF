@@ -7,9 +7,7 @@ Bundle-Vendor: commonreality.org
 Require-Bundle: org.commonreality.net;bundle-version="1.0.0",
  org.commonreality.api;bundle-version="1.0.0",
  org.commonreality.time;bundle-version="1.0.0",
- org.commonreality.support;bundle-version="1.0.0",
- org.commonreality.netty;bundle-version="1.0.0";resolution:=optional,
- org.junit;bundle-version="4.12.0";resolution:=optional
+ org.commonreality.netty;bundle-version="1.0.0";resolution:=optional
 Export-Package: org.commonreality,
  org.commonreality.agents,
  org.commonreality.efferent.impl,

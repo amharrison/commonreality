@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -15,8 +16,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javolution.util.FastList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -981,7 +980,7 @@ public class StateAndConnectionManager
     boolean isClockOwner = false;
     Future<IAcknowledgement> initAck = null;
 
-    FastList<IIdentifier> pendingIds = FastList.newInstance();
+    List<IIdentifier> pendingIds = new ArrayList<>();
 
     if (LOGGER.isDebugEnabled())
       LOGGER.debug(String.format("Acquiring [%s]", _lock));
