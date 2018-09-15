@@ -1,0 +1,24 @@
+-classpath
+'/Users/harrison/git/commonreality/org.commonreality.api/target/classes:/Users/harrison/git/commonreality/org.commonreality.time/target/classes:/Users/harrison/git/commonreality/org.commonreality/target/classes:/Users/harrison/git/commonreality/org.commonreality.net/target/classes:/Users/harrison/git/commonreality/org.commonreality.netty/target/classes:/Users/harrison/git/commonreality/org.commonreality.modalities/target/classes:/Users/harrison/git/commonreality/org.commonreality.modalities.spatial/target/classes:/Users/harrison/git/commonreality/org.commonreality.sensors/target/classes:/Users/harrison/git/commonreality/org.commonreality.sensors.base/target/classes:/Users/harrison/git/commonreality/org.commonreality.sensors.xml/target/classes:/Users/harrison/.m2/repository/commons-logging/commons-logging/1.2/commons-logging-1.2.jar:/Users/harrison/.m2/repository/org/commonreality/net/org.commonreality.net/0.0.1-SNAPSHOT/org.commonreality.net-0.0.1-SNAPSHOT.jar:/Users/harrison/.m2/repository/org/commonreality/modalities/org.commonreality.modalities/0.0.1-SNAPSHOT/org.commonreality.modalities-0.0.1-SNAPSHOT.jar:/Users/harrison/.m2/repository/org/commonreality/sensors/base/org.commonreality.sensors.base/0.0.1-SNAPSHOT/org.commonreality.sensors.base-0.0.1-SNAPSHOT.jar:/Users/harrison/.m2/repository/org/commonreality/time/org.commonreality.time/0.0.1-SNAPSHOT/org.commonreality.time-0.0.1-SNAPSHOT.jar:/Users/harrison/.m2/repository/org/commonreality/core/org.commonreality.core/0.0.1-SNAPSHOT/org.commonreality.core-0.0.1-SNAPSHOT.jar:/Users/harrison/.m2/repository/org/commonreality/api/org.commonreality.api/0.0.1-SNAPSHOT/org.commonreality.api-0.0.1-SNAPSHOT.jar:/Users/harrison/.m2/repository/io/netty/netty-all/5.0.0.Alpha2/netty-all-5.0.0.Alpha2.jar:/Users/harrison/.m2/repository/org/commonreality/sensors/org.commonreality.sensors/0.0.1-SNAPSHOT/org.commonreality.sensors-0.0.1-SNAPSHOT.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/Users/harrison/git/commonreality/org.commonreality.api/src:/Users/harrison/git/commonreality/org.commonreality.api/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.time/src:/Users/harrison/git/commonreality/org.commonreality.time/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality/src:/Users/harrison/git/commonreality/org.commonreality/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.net/src:/Users/harrison/git/commonreality/org.commonreality.net/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.netty/src:/Users/harrison/git/commonreality/org.commonreality.netty/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.modalities/src:/Users/harrison/git/commonreality/org.commonreality.modalities/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.modalities.spatial/src:/Users/harrison/git/commonreality/org.commonreality.modalities.spatial/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.sensors/src:/Users/harrison/git/commonreality/org.commonreality.sensors/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.sensors.base/src:/Users/harrison/git/commonreality/org.commonreality.sensors.base/target/generated-sources/annotations:/Users/harrison/git/commonreality/org.commonreality.sensors.xml/src:/Users/harrison/git/commonreality/org.commonreality.sensors.xml/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2018. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/harrison/git/commonreality/org.commonreality.distro/target/../javadocs/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'org.commonreality.distro 0.0.1-SNAPSHOT API'
+-linkoffline
+'https://docs.oracle.com/javase/8/docs/api' '/Users/harrison/git/commonreality/org.commonreality.distro/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'org.commonreality.distro 0.0.1-SNAPSHOT API'

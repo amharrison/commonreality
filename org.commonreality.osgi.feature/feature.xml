@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.commonreality.osgi.feature"
+      label="CommonReality for Eclipse/OSGi"
+      version="0.0.1.qualifier">
+
+   <description url="http://www.example.com/description">
+      [Enter Feature Description here.]
+   </description>
+
+   <copyright url="http://www.example.com/copyright">
+      [Enter Copyright Description here.]
+   </copyright>
+
+   <license url="http://www.example.com/license">
+      [Enter License Description here.]
+   </license>
+
+   <requires>
+      <import plugin="javax.xml"/>
+      <import plugin="org.apache.commons.logging"/>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.pde.core" version="3.12.0" match="greaterOrEqual"/>
+   </requires>
+
+   <plugin
+         id="org.commonreality.osgi"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="org.commonreality.netty.core"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="org.commonreality.osgi.source"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+</feature>

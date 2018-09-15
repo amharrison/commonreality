@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Source
+Bundle-SymbolicName: org.commonreality.osgi.source;singleton:=true
+Bundle-Version: 0.0.1.qualifier
+Automatic-Module-Name: org.commonreality.osgi.source
+Eclipse-SourceBundle: org.commonreality.osgi;roots:="lib/org.commonreality.apisrc,lib/org.commonreality.coresrc,lib/org.commonreality.modalities.spatialsrc,lib/org.commonreality.modalitiessrc,lib/org.commonreality.netsrc,lib/org.commonreality.nettysrc,lib/org.commonreality.osgisrc,lib/org.commonreality.sensors.basesrc,lib/org.commonreality.sensors.xmlsrc,lib/org.commonreality.sensorssrc,lib/org.commonreality.timesrc"

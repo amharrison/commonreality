@@ -84,8 +84,8 @@ public class RealityConfigurator extends ParticipantConfigurator<Runnable>
     return new RealitySetup(reality, _sensors, _agents);
   }
 
-  static public Runnable shutdownRunnable()
+  static public Runnable shutdownRunnable(boolean waitForStop)
   {
-    return new RealityShutdown(CommonReality.getReality(), false);
+    return new RealityShutdown(CommonReality.getReality(), waitForStop);
   }
 }

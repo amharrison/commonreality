@@ -4,9 +4,7 @@ Bundle-Name: Mina Networking Plug-in
 Bundle-SymbolicName: org.commonreality.mina;singleton:=true
 Bundle-Version: 1.2.0.qualifier
 Bundle-Vendor: jactr.org
-Require-Bundle: org.commonreality.mina.core,
- org.commonreality.net;bundle-version="1.0.0",
- org.commonreality.support;bundle-version="1.0.0",
+Require-Bundle: org.commonreality.net;bundle-version="1.0.0",
  org.apache.log4j;bundle-version="1.2.15";resolution:=optional,
  org.junit;bundle-version="4.12.0";resolution:=optional
 Export-Package: org.commonreality.mina,

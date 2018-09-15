@@ -2,14 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Netty Core
 Bundle-SymbolicName: org.commonreality.netty.core;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Bundle-ClassPath: lib/netty-buffer-5.0.0.Alpha2.jar,
- lib/netty-codec-5.0.0.Alpha2.jar,
- lib/netty-common-5.0.0.Alpha2.jar,
- lib/netty-handler-5.0.0.Alpha2.jar,
- lib/netty-transport-5.0.0.Alpha2.jar,
- lib/netty-resolver-5.0.0.Alpha2.jar
+Eclipse-BuddyPolicy: registered
 Export-Package: io.netty.bootstrap,
  io.netty.buffer,
  io.netty.channel,
@@ -45,3 +40,4 @@ Export-Package: io.netty.bootstrap,
  io.netty.util.internal,
  io.netty.util.internal.chmv8,
  io.netty.util.internal.logging
+Bundle-ClassPath: lib/netty-all-5.0.0.Alpha2.jar

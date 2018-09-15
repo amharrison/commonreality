@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?pde version="3.8"?><target includeMode="feature" name="Running Platform">
+	<locations>
+		<location path="${eclipse_home}" type="Profile"/>
+	</locations>
+	<environment>
+		<arch>x86_64</arch>
+		<os>macosx</os>
+		<ws>cocoa</ws>
+		<nl>en_US</nl>
+	</environment>
+	<includeBundles>
+		<feature id="org.eclipse.jdt"/>
+		<feature id="org.eclipse.pde"/>
+		<feature id="org.eclipse.platform"/>
+		<feature id="org.eclipse.rcp"/>
+		<feature id="org.eclipse.e4.rcp"/>
+		<feature id="org.eclipse.ecf.core.feature"/>
+		<feature id="org.eclipse.ecf.core.ssl.feature"/>
+		<feature id="org.eclipse.ecf.filetransfer.feature"/>
+		<feature id="org.eclipse.ecf.filetransfer.httpclient4.feature"/>
+		<feature id="org.eclipse.ecf.filetransfer.httpclient4.ssl.feature"/>
+		<feature id="org.eclipse.ecf.filetransfer.ssl.feature"/>
+		<feature id="org.eclipse.emf.common"/>
+		<feature id="org.eclipse.emf.ecore"/>
+		<feature id="org.eclipse.equinox.p2.core.feature"/>
+		<feature id="org.eclipse.equinox.p2.extras.feature"/>
+		<feature id="org.eclipse.equinox.p2.rcp.feature"/>
+		<feature id="org.eclipse.equinox.p2.user.ui"/>
+		<feature id="org.eclipse.help"/>
+	</includeBundles>
+</target>

@@ -4,18 +4,6 @@ Bundle-Name: Swing Plug-in
 Bundle-SymbolicName: org.commonreality.sensors.swing;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Require-Bundle: org.commonreality.core,
- org.commonreality.mina,
- org.commonreality.sensors.base,
- org.apache.log4j;resolution:=optional,
- org.commonreality.api;bundle-version="1.0.0",
- org.commonreality.net;bundle-version="1.0.0",
- org.commonreality.time;bundle-version="1.0.0",
- org.jactr;bundle-version="1.3.0";resolution:=optional,
- org.jactr.io;bundle-version="1.0.10";resolution:=optional,
- org.commonreality.support;bundle-version="1.0.0",
- org.commonreality.modalities;bundle-version="1.0.0",
- org.commonreality.sensors
 Eclipse-BuddyPolicy: registered
 Eclipse-RegisterBuddy: org.commonreality.core, org.jactr.io, org.jactr, org.jactr.tools, org.apache.log4j, org.apache.commons.logging 
 Import-Package: junit.framework;resolution:=optional

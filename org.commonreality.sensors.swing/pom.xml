@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <artifactId>org.commonreality.sensors.swing</artifactId>
+   <parent>
+   <groupId>org.commonreality</groupId>
+   <artifactId>org.commonreality.distro</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <relativePath>../org.commonreality.distro/pom.xml</relativePath>
+  </parent>
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+        </excludes>
+      </resource>
+    </resources>
+  </build>
+  <dependencies>
+  	<dependency>
+  		<groupId>org.commonreality</groupId>
+  		<artifactId>org.commonreality.sensors.base</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.commonreality</groupId>
+  		<artifactId>org.commonreality.modalities</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.jactr</groupId>
+  		<artifactId>org.jactr.io</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
+  </dependencies>
+</project>

@@ -1,18 +1,96 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.commonreality</groupId>
-  <artifactId>org.commonreality</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <modules>
-  	<module>
-  		../../../../../../git/commonreality/org.commonreality.api
-  	</module>
-  	<module>
-  		../../../../../../git/commonreality/org.commonreality
-  	</module>
-  	<module>
-  		../../../../../../git/commonreality/org.commonreality.time
-  	</module>
-  </modules>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.commonreality</groupId>
+	<artifactId>org.commonreality.distro</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<properties>
+		<osgiProject>org.commonreality.osgi</osgiProject>
+		<osgiProjectPath>${project.basedir}/../${osgiProject}</osgiProjectPath>
+		<osgiSourcePath>${osgiProjectPath}/source</osgiSourcePath>
+	</properties>
+
+	<modules>
+		<module>../org.commonreality.api</module>
+		<module>../org.commonreality.time</module>
+		<module>../org.commonreality</module>
+
+		<module>../org.commonreality.net</module>
+		<module>../org.commonreality.netty</module>
+		<module>../org.commonreality.modalities</module>
+		<module>../org.commonreality.modalities.spatial</module>
+		<module>../org.commonreality.sensors</module>
+		<module>../org.commonreality.sensors.base</module>
+		<module>../org.commonreality.sensors.xml</module>
+
+
+		<module>../org.commonreality.netty.core</module>
+		<module>../org.commonreality.osgi</module>
+		<module>../org.commonreality.osgi.feature</module>
+		<module>../org.commonreality.update</module>
+	</modules>
+
+
+	<dependencies>
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.junit</groupId>
+			<artifactId>junit4-engine</artifactId>
+			<version>5.0.0-ALPHA</version>
+			<scope>test</scope>
+			<optional>true</optional>
+		</dependency>
+	</dependencies>
+
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+			<!-- javadoc:aggregate-jar will create the aggregate javadocs For the 
+				life of me I can't get outputDirectory to work, either using aggregate or 
+				aggregate jar -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.0.1</version>
+				<configuration>
+					<failOnError>false</failOnError>
+					<reportOutputDirectory>${project.build.directory}/../javadocs</reportOutputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>aggregate</id>
+						<goals>
+							<goal>aggregate</goal>
+						</goals>
+						<phase>site</phase>
+						<configuration>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

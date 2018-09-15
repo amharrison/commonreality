@@ -1,0 +1,161 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>org.commonreality.osgi.source</artifactId>
+	<parent>
+		<groupId>org.commonreality</groupId>
+		<artifactId>org.commonreality.distro</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../org.commonreality.distro/pom.xml</relativePath>
+	</parent>
+
+	<packaging>eclipse-plugin</packaging>
+	<properties>
+		<tycho-version>1.2.0</tycho-version>
+		<symbolicVersion>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</symbolicVersion>
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>photon</id>
+			<layout>p2</layout>
+			<url>http://download.eclipse.org/releases/photon</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<version>${tycho-version}</version>
+				<configuration>
+					<pomDependencies>consider</pomDependencies>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.1.1</version>
+				<executions>
+
+					<!-- for source generation we unpack the source, then zip it up as org.commonreality.osg_version/src.zip. 
+						Our manifest points to itself for its source bundle. Who knows if this will 
+						work. -->
+					<execution>
+						<id>unpack</id>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>unpack-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeGroupIds>org.commonreality</includeGroupIds>
+							<classifier>sources</classifier>
+							<useSubDirectoryPerArtifact>true</useSubDirectoryPerArtifact>
+							<failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
+							<stripVersion>true</stripVersion>
+							<stripClassifier>true</stripClassifier>
+							<outputAbsoluteArtifactFilename>true</outputAbsoluteArtifactFilename>
+							<outputDirectory>${project.build.directory}/src/</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<configuration>
+							<tasks>
+								<!-- <zip destfile="${project.build.directory}/../${project.artifactId}_${symbolicVersion}/src.zip" 
+									basedir="${project.build.directory}/src/" /> -->
+								<copy todir="${project.build.directory}/../lib"
+									verbose="true">
+									<fileset dir="${project.build.directory}/src/"
+										includes="**" />
+									<mapper type="regexp" from="(.*)-sources-jar(.*)"
+										to="\1src\2" />
+									<!-- <mapper type="glob" from="*-sources-jar*" to="*src*"/> -->
+								</copy>
+								<!-- and copy the javadoc -->
+								<copy todir="${project.build.directory}/../">
+									<fileset
+										dir="{$project.build.directory}/../../org.commonreality.distro/javadocs/"
+										includes="**" />
+								</copy>
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.api</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.core</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.modalities</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>
+				org.commonreality.modalities.spatial
+			</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.net</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.netty</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.sensors</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.sensors.base</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.sensors.xml</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonreality</groupId>
+			<artifactId>org.commonreality.time</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+</project>
