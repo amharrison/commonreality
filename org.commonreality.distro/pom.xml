@@ -7,13 +7,9 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<properties>
-		<osgiProject>org.commonreality.osgi</osgiProject>
-		<osgiProjectPath>${project.basedir}/../${osgiProject}</osgiProjectPath>
-		<osgiSourcePath>${osgiProjectPath}/source</osgiSourcePath>
-	</properties>
 
 	<modules>
+	<!-- core modules built by maven -->
 		<module>../org.commonreality.api</module>
 		<module>../org.commonreality.time</module>
 		<module>../org.commonreality</module>
@@ -26,11 +22,6 @@
 		<module>../org.commonreality.sensors.base</module>
 		<module>../org.commonreality.sensors.xml</module>
 
-
-		<module>../org.commonreality.netty.core</module>
-		<module>../org.commonreality.osgi</module>
-		<module>../org.commonreality.osgi.feature</module>
-		<module>../org.commonreality.update</module>
 	</modules>
 
 

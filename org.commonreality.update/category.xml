@@ -6,6 +6,7 @@
    <feature url="features/org.commonreality.osgi.feature_0.0.1.qualifier.jar" id="org.commonreality.osgi.feature" version="0.0.1.qualifier">
       <category name="org.commonreality"/>
    </feature>
+  
    <category-def name="org.commonreality" label="CommonReality">
       <description>
          Provides interface abstraction to simulation providers for cognitive modeling.

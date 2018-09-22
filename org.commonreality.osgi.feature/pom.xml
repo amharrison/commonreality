@@ -5,85 +5,10 @@
 	<artifactId>org.commonreality.osgi.feature</artifactId>
 	<parent>
 		<groupId>org.commonreality</groupId>
-		<artifactId>org.commonreality.distro</artifactId>
+		<artifactId>org.commonreality.osgi.distro</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../org.commonreality.distro/pom.xml</relativePath>
+		<relativePath>../org.commonreality.osgi.distro/pom.xml</relativePath>
 	</parent>
 
 	<packaging>eclipse-feature</packaging>
-
-	<properties>
-		<tycho-version>1.2.0</tycho-version>
-	</properties>
-
-	<repositories>
-		<repository>
-			<id>photon</id>
-			<layout>p2</layout>
-			<url>http://download.eclipse.org/releases/photon</url>
-		</repository>
-	</repositories>
-
-
-	<build>
-		<plugins>
-
-			<!-- -->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<extensions>true</extensions>
-			</plugin>
-			<!-- 
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-				<version>${tycho-version}</version>
-
-				<executions>
-					<execution>
-						<id>plugin-source</id>
-						<goals>
-							<goal>plugin-source</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho.extras</groupId>
-				<artifactId>tycho-source-feature-plugin</artifactId>
-				<version>${tycho-version}</version>
-
-				<executions>
-					<execution>
-						<id>source-feature</id>
-						<phase>package</phase>
-						<goals>
-							<goal>source-feature</goal>
-						</goals>
-					</execution>
-				</executions>
-
-				<configuration>
-					<excludes>
-						<plugin id="org.commonreality.netty.core" />
-					</excludes>
-				</configuration>
-			</plugin>
-			 -->
-<!-- 
- -->			
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-				<version>${tycho-version}</version>
-				<configuration>
-					<pomDependencies>consider</pomDependencies>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
-
 </project>

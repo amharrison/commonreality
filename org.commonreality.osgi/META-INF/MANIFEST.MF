@@ -84,19 +84,10 @@ Export-Package: org.commonreality.agents,
 Require-Bundle: javax.xml,
  org.apache.commons.logging,
  org.eclipse.core.runtime,
- org.eclipse.pde.core;bundle-version="3.12.0",
+ org.eclipse.pde.core,
  org.commonreality.netty.core;bundle-version="0.0.1"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: org.commonreality.osgi
 Eclipse-BuddyPolicy: registered
 Eclipse-RegisterBuddy: org.apache.log4j
-Bundle-ClassPath: lib/org.commonreality.api-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.core-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.modalities-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.modalities.spatial-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.net-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.netty-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.sensors-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.sensors.base-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.sensors.xml-0.0.1-SNAPSHOT.jar,
- lib/org.commonreality.time-0.0.1-SNAPSHOT.jar
+Bundle-ClassPath: .

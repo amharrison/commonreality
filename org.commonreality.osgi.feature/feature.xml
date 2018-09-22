@@ -19,8 +19,7 @@
    <requires>
       <import plugin="javax.xml"/>
       <import plugin="org.apache.commons.logging"/>
-      <import plugin="org.eclipse.core.runtime"/>
-      <import plugin="org.eclipse.pde.core" version="3.12.0" match="greaterOrEqual"/>
+      <import plugin="org.commonreality.netty.core" version="0.0.1" match="greaterOrEqual"/>
    </requires>
 
    <plugin
@@ -30,13 +29,13 @@
          version="0.0.0"/>
 
    <plugin
-         id="org.commonreality.netty.core"
+         id="org.commonreality.osgi.source"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
 
    <plugin
-         id="org.commonreality.osgi.source"
+         id="org.commonreality.netty.core"
          download-size="0"
          install-size="0"
          version="0.0.0"/>

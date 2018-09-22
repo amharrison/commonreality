@@ -6,63 +6,22 @@
 
 	<parent>
 		<groupId>org.commonreality</groupId>
-		<artifactId>org.commonreality.distro</artifactId>
+		<artifactId>org.commonreality.osgi.distro</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../org.commonreality.distro/pom.xml</relativePath>
+		<relativePath>../org.commonreality.osgi.distro/pom.xml</relativePath>
 	</parent>
 
 	<!-- <packaging>jar</packaging> -->
 	<packaging>eclipse-plugin</packaging>
-	<properties>
-		<tycho-version>1.2.0</tycho-version>
-	</properties>
 
-	<repositories>
-		<repository>
-			<id>photon</id>
-			<layout>p2</layout>
-			<url>http://download.eclipse.org/releases/photon</url>
-		</repository>
-	</repositories>
 
 
 	<!-- we expect the org.commonreality.distro javadoc:javadoc to copy the 
 		jars to javadocs/ We then pull the sources using dependency and save those 
 		in src/ We use Tycho to grab our manifest. -->
 	<build>
+		<sourceDirectory>generated-src</sourceDirectory>
 		<plugins>
-
-			<!-- -->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<extensions>true</extensions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<executions>
-					<execution>
-						<id>plugin-source</id>
-						<goals>
-							<goal>plugin-source</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<!-- 
-			 -->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-				<version>${tycho-version}</version>
-				<configuration>
-					<pomDependencies>consider</pomDependencies>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.7.0</version>
@@ -71,103 +30,64 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-source-plugin</artifactId> 
-				<version>3.0.1</version> <executions> <execution> <id>attach-sources</id> 
-				<phase>verify</phase> <goals> <goal>jar-no-fork</goal> </goals> </execution> 
-				</executions> </plugin> -->
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-javadoc-plugin</artifactId> 
-				<version>3.0.1</version> <configuration> <failOnError>false</failOnError> 
-				</configuration> </plugin> -->
-
+			<!-- -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>3.1.1</version>
 				<executions>
+				
+
+					<!-- for source generation we unpack the source, then zip it up as org.commonreality.osg_version/src.zip. 
+						Our manifest points to itself for its source bundle. Who knows if this will 
+						work. -->
 					<execution>
-						<id>copy</id>
-						<phase>validate</phase>
+						<id>copySrc</id>
+						<phase>unpack-dependencies</phase>
 						<goals>
-							<goal>copy</goal>
+							<!-- use copy-dependencies instead if you don't want to explode the 
+								sources -->
+							<goal>unpack-dependencies</goal>
 						</goals>
 						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.api</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.core</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.modalities</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>
-										org.commonreality.modalities.spatial
-									</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.net</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.netty</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.sensors</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.sensors.base</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.sensors.xml</artifactId>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.commonreality</groupId>
-									<artifactId>org.commonreality.time</artifactId>
-								</artifactItem>
-							</artifactItems>
-							<outputDirectory>${osgiProjectPath}/lib</outputDirectory>
-							<overWriteReleases>false</overWriteReleases>
-							<overWriteSnapshots>true</overWriteSnapshots>
+							<includeGroupIds>org.commonreality</includeGroupIds>
+							<classifier>sources</classifier>
+							<failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
+							<outputDirectory>${project.build.directory}/../generated-src/</outputDirectory>
 							<overWrite>true</overWrite>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-<!-- 
 			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.7</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<configuration>
-							<tasks>
-								<move todir="${project.build.directory}/../lib"
-									verbose="true">
-									<fileset dir="${project.build.directory}/../lib/"
-										includes="**" />
-									<mapper type="regexp" from="(.*)-\d+\.\d+\.\d-SNAPSHOT.jar$$"
-										to="\1.jar" />
-								</move>
-							</tasks>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>generated-src/</directory>
+							<includes>
+								<include>**/*.java</include>
+							</includes>
+							<followSymlinks>false</followSymlinks>
+						</fileset>
+					</filesets>
+				</configuration>
 			</plugin>
- -->
 		</plugins>
 	</build>
 
