@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Provider for OSGi environment
 Bundle-SymbolicName: org.commonreality.osgi;singleton:=true
-Bundle-Version: 0.0.1.qualifier
+Bundle-Version: 1.5.0.qualifier
 Export-Package: org.commonreality.agents,
  org.commonreality.efferent,
  org.commonreality.efferent.event,
@@ -81,11 +81,9 @@ Export-Package: org.commonreality.agents,
  org.commonreality.time,
  org.commonreality.time.impl,
  org.commonreality.util
-Require-Bundle: javax.xml,
- org.apache.commons.logging,
+Require-Bundle: org.apache.commons.logging,
  org.eclipse.core.runtime,
- org.eclipse.pde.core,
- org.commonreality.netty.core;bundle-version="0.0.1"
+ org.commonreality.netty.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: org.commonreality.osgi
 Eclipse-BuddyPolicy: registered

@@ -69,15 +69,11 @@
    <extension
          point="org.eclipse.pde.core.javadoc">
          <javadoc path="javadocs/apidocs/" archive="false">
-        <plugin id="com.example.abc"/>
-        <plugin id="com.example.def"/>
+        <plugin id="org.commonreality.osgi"/>
      </javadoc>
-     
    </extension>
    <extension
          point="org.eclipse.pde.core.source">
          <location path="."/>
    </extension>
-
-   
 </plugin>
